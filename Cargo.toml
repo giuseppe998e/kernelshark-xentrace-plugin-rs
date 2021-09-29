@@ -1,0 +1,19 @@
+[package]
+name = "kernelshark-xentrace-plugin"
+description = "KernelShark XenTrace plugin using Rust and FFI"
+version = "0.1.0"
+authors = ["Giuseppe Eletto <peppe.eletto@gmail.com>"]
+readme = "README.md"
+license = "LGPL-2.1-or-later"
+keywords = ["xen", "xentrace", "kenelshark", "ks", "trace", "plugin", "ffi"]
+repository = ""
+edition = "2018"
+
+[dependencies]
+xentrace-parser = "0.2"
+
+[profile.release] # Optimized for code size (https://github.com/johnthagen/min-sized-rust)
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
