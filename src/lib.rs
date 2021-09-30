@@ -46,8 +46,8 @@ const TEST_CPUS_NUM: usize = 8;
 
 static KSHARK_SOURCE_TYPE: &str = "xentrace_bin";
 
-fn get_pid(_stream: *mut kshark_data_stream, _entry: *mut kshark_entry) -> c_int {
-    let entry = from_raw_ptr(_entry).unwrap();
+fn get_pid(_stream: *mut kshark_data_stream, entry_ptr: *mut kshark_entry) -> c_int {
+    let entry = from_raw_ptr(entry_ptr).unwrap();
     entry.pid
 }
 
@@ -68,11 +68,11 @@ fn dump_entry(_stream: *mut kshark_data_stream, _entry: *mut kshark_entry) -> *c
 }
 
 fn load_entries(
-    stream: *mut kshark_data_stream,
+    stream_ptr: *mut kshark_data_stream,
     _context: *const kshark_context,
     data_rows: *mut *mut *mut kshark_entry,
 ) -> isize {
-    let stream = from_raw_ptr(stream).unwrap();
+    let stream = from_raw_ptr(stream_ptr).unwrap();
     let mut rows = Box::new([null::<kshark_entry>(); TEST_EVENTS_NUM]);
 
     for i in 0..TEST_EVENTS_NUM {
@@ -98,9 +98,9 @@ fn load_entries(
 
 // KSHARK_INPUT_CHECK @ libkshark-plugin.h
 #[no_mangle]
-pub extern "C" fn kshark_input_check(file: *const c_char, _frmt: *mut *mut c_char) -> bool {
-    let file_path = from_str_ptr(file).unwrap();
-    let file_path = Path::new(file_path);
+pub extern "C" fn kshark_input_check(file_ptr: *const c_char, _frmt: *mut *mut c_char) -> bool {
+    let file_str = from_str_ptr(file_ptr).unwrap();
+    let file_path = Path::new(file_str);
 
     let hdr = {
         let mut file_buf = File::open(file_path).unwrap();
@@ -120,7 +120,7 @@ pub extern "C" fn kshark_input_format() -> *const c_char {
 
 // KSHARK_INPUT_INITIALIZER @ libkshark-plugin.h
 #[no_mangle]
-pub extern "C" fn kshark_input_initializer(stream: *mut kshark_data_stream) -> c_int {
+pub extern "C" fn kshark_input_initializer(stream_ptr: *mut kshark_data_stream) -> c_int {
     let mut interface = Box::new(kshark_generic_stream_interface::default());
 
     interface.type_ = 1; // KS_GENERIC_DATA_INTERFACE
@@ -131,7 +131,7 @@ pub extern "C" fn kshark_input_initializer(stream: *mut kshark_data_stream) -> c
     interface.dump_entry = dump_entry as _;
     interface.load_entries = load_entries as _;
 
-    let mut stream = from_raw_ptr_mut(stream).unwrap();
+    let mut stream = from_raw_ptr_mut(stream_ptr).unwrap();
 
     stream.interface = Box::into_raw(interface);
     stream.n_cpus = TEST_CPUS_NUM as i32;
