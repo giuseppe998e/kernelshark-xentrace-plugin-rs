@@ -1,16 +1,16 @@
-use std::ffi::{CStr, CString};
-use std::os::raw::c_char;
+use std::{
+    ffi::{CStr, CString},
+    os::raw::c_char,
+    str::Utf8Error,
+};
 
-pub fn ptr_to_str(c_buf: *const c_char) -> String {
+pub(crate) fn from_str_ptr<'a>(c_buf: *const c_char) -> Result<&'a str, Utf8Error> {
     let c_str = unsafe { CStr::from_ptr(c_buf) };
-    let str_slice = c_str.to_str().unwrap();
-    str_slice.to_owned()
+    c_str.to_str()
 }
 
-pub fn str_to_ptr(string: &str) -> *const c_char {
+pub(crate) fn into_str_ptr(string: &str) -> *const c_char {
     let c_string = CString::new(string).unwrap();
-    let str_bytes = c_string.as_bytes_with_nul();
-
-    let str_box = Box::new(str_bytes);
-    Box::into_raw(str_box) as *const _
+    let str_bytes = c_string.into_bytes_with_nul().into_boxed_slice();
+    Box::into_raw(str_bytes) as _
 }
