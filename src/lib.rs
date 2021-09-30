@@ -22,7 +22,7 @@ mod util;
 
 use interface::kshark::{kshark_context, kshark_data_stream, kshark_entry};
 use std::os::raw::{c_char, c_int};
-use util::string::{char_ptr_to_str, str_to_char_ptr};
+use util::string::{ptr_to_str, str_to_ptr};
 
 static KSHARK_SOURCE_TYPE: &str = "kshark_xen";
 
