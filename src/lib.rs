@@ -24,7 +24,11 @@ use interface::kshark::{
     kshark_context, kshark_data_stream, kshark_entry, kshark_generic_stream_interface,
     kshark_hash_id_add,
 };
-use std::{alloc::System, os::raw::{c_char, c_int}, ptr::null};
+use std::{
+    alloc::System,
+    os::raw::{c_char, c_int},
+    ptr::null,
+};
 use util::{
     pointer::{from_raw_ptr, from_raw_ptr_mut},
     string::{from_str_ptr, into_str_ptr},
