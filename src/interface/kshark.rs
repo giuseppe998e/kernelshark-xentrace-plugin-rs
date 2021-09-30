@@ -1,4 +1,7 @@
-use std::os::raw::{c_char, c_int, c_long, c_short, c_uint, c_void};
+use std::{
+    os::raw::{c_char, c_int, c_long, c_short, c_uint, c_void},
+    ptr::null,
+};
 
 /* STRUCTs from pthread.h (REQUIRED) */
 #[repr(C)]
@@ -8,8 +11,17 @@ pub struct __pthread_internal_list {
     pub __next: *mut __pthread_internal_list,
 }
 
+impl Default for __pthread_internal_list {
+    fn default() -> Self {
+        Self {
+            __prev: null::<c_void>() as *mut _,
+            __next: null::<c_void>() as *mut _,
+        }
+    }
+}
+
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct __pthread_mutex_s {
     pub __lock: c_int,
     pub __count: c_uint,
@@ -61,6 +73,21 @@ pub struct kshark_entry {
     pub ts: i64,
 }
 
+impl Default for kshark_entry {
+    fn default() -> Self {
+        Self {
+            next: null::<c_void>() as *mut _,
+            visible: Default::default(),
+            stream_id: Default::default(),
+            event_id: Default::default(),
+            cpu: Default::default(),
+            pid: Default::default(),
+            offset: Default::default(),
+            ts: Default::default(),
+        }
+    }
+}
+
 /// Structure representing the interface of methods used to operate over
 /// the data from a given stream.
 #[repr(C)]
@@ -102,6 +129,30 @@ pub struct kshark_generic_stream_interface {
     pub load_matrix: *mut (),
     /// Generic data handle.
     pub handle: *mut c_void,
+}
+
+impl Default for kshark_generic_stream_interface {
+    fn default() -> Self {
+        Self {
+            type_: Default::default(),
+            get_pid: null::<c_void>() as *mut _,
+            get_event_id: null::<c_void>() as *mut _,
+            get_event_name: null::<c_void>() as *mut _,
+            get_task: null::<c_void>() as *mut _,
+            get_info: null::<c_void>() as *mut _,
+            aux_info: null::<c_void>() as *mut _,
+            find_event_id: null::<c_void>() as *mut _,
+            get_all_event_ids: null::<c_void>() as *mut _,
+            dump_entry: null::<c_void>() as *mut _,
+            get_all_event_field_names: null::<c_void>() as *mut _,
+            get_event_field_type: null::<c_void>() as *mut _,
+            read_event_field_int64: null::<c_void>() as *mut _,
+            read_record_field_int64: null::<c_void>() as *mut _,
+            load_entries: null::<c_void>() as *mut _,
+            load_matrix: null::<c_void>() as *mut _,
+            handle: null::<c_void>() as *mut _,
+        }
+    }
 }
 
 /// Structure representing a stream of trace data.
@@ -157,10 +208,40 @@ pub struct kshark_data_stream {
     pub interface: *mut kshark_generic_stream_interface,
 }
 
+impl Default for kshark_data_stream {
+    fn default() -> Self {
+        Self {
+            stream_id: Default::default(),
+            n_cpus: Default::default(),
+            n_events: Default::default(),
+            idle_pid: Default::default(),
+            file: null::<c_void>() as *mut _,
+            name: null::<c_void>() as *mut _,
+            tasks: null::<c_void>() as *mut _,
+            input_mutex: pthread_mutex_t { __align: 0 },
+            show_task_filter: null::<c_void>() as *mut _,
+            hide_task_filter: null::<c_void>() as *mut _,
+            show_event_filter: null::<c_void>() as *mut _,
+            hide_event_filter: null::<c_void>() as *mut _,
+            show_cpu_filter: null::<c_void>() as *mut _,
+            hide_cpu_filter: null::<c_void>() as *mut _,
+            data_format: Default::default(),
+            plugins: null::<c_void>() as *mut _,
+            n_plugins: Default::default(),
+            calib: null::<c_void>() as *mut _,
+            calib_array: null::<c_void>() as *mut _,
+            calib_array_size: Default::default(),
+            event_handlers: null::<c_void>() as *mut _,
+            draw_handlers: null::<c_void>() as *mut _,
+            interface: null::<c_void>() as *mut _,
+        }
+    }
+}
+
 /// Structure representing the parameters of the stream descriptor array owned
 /// by the kshark session.
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct kshark_stream_array_descriptor {
     /// The identifier of the Data stream added.
     pub max_stream_id: c_int,
@@ -194,6 +275,22 @@ pub struct kshark_context {
     pub plugins: *mut c_void, // XXX NOT IMPL - kshark_plugin_list
     /// The number of plugins.
     pub n_plugins: c_int,
+}
+
+impl Default for kshark_context {
+    fn default() -> Self {
+        Self {
+            stream: null::<*mut kshark_data_stream>() as *mut _,
+            n_streams: Default::default(),
+            stream_info: Default::default(),
+            filter_mask: Default::default(),
+            collections: null::<c_void>() as *mut _,
+            inputs: null::<c_void>() as *mut _,
+            n_inputs: Default::default(),
+            plugins: null::<c_void>() as *mut _,
+            n_plugins: Default::default(),
+        }
+    }
 }
 
 /* FUNCTIONs from ksharklib.h */
