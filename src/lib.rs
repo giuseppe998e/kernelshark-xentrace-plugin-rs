@@ -26,7 +26,10 @@ use interface::kshark::{
 };
 use std::{
     alloc::System,
+    fs::File,
+    io::Read,
     os::raw::{c_char, c_int},
+    path::Path,
     ptr::null,
 };
 use util::{
@@ -41,7 +44,7 @@ static A: System = System;
 const TEST_EVENTS_NUM: usize = 50000;
 const TEST_CPUS_NUM: usize = 8;
 
-static KSHARK_SOURCE_TYPE: &str = "kshark_xen";
+static KSHARK_SOURCE_TYPE: &str = "xentrace_bin";
 
 fn get_pid(_stream: *mut kshark_data_stream, _entry: *mut kshark_entry) -> c_int {
     let entry = from_raw_ptr(_entry).unwrap();
@@ -96,8 +99,17 @@ fn load_entries(
 // KSHARK_INPUT_CHECK @ libkshark-plugin.h
 #[no_mangle]
 pub extern "C" fn kshark_input_check(file: *const c_char, _frmt: *mut *mut c_char) -> bool {
-    let file_str = from_str_ptr(file).unwrap();
-    file_str.ends_with(".fake")
+    let file_path = from_str_ptr(file).unwrap();
+    let file_path = Path::new(file_path);
+
+    let hdr = {
+        let mut file_buf = File::open(file_path).unwrap();
+        let mut buf = [0u8; 4];
+        file_buf.read_exact(&mut buf).unwrap();
+        u32::from_ne_bytes(buf)
+    };
+
+    0x0001f003 == (hdr & 0x0fffffff) // XXX Must use interface/xen
 }
 
 // KSHARK_INPUT_FORMAT @ libkshark-plugin.h
