@@ -12,6 +12,9 @@ edition = "2018"
 [dependencies]
 xentrace-parser = "0.2"
 
+[lib]
+crate-type = ["cdylib"]
+
 [profile.release] # Optimized for code size (https://github.com/johnthagen/min-sized-rust)
 opt-level = "z"
 lto = true
