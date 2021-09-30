@@ -96,37 +96,37 @@ pub struct kshark_generic_stream_interface {
     /// Interface version identifier.
     pub type_: c_uint,
     /// Method used to retrieve the Process Id of the entry.
-    pub get_pid: *mut (),
+    pub get_pid: *const (),
     /// Method used to retrieve the Event Id of the entry.
-    pub get_event_id: *mut (),
+    pub get_event_id: *const (),
     /// Method used to retrieve the Event name of the entry.
-    pub get_event_name: *mut (),
+    pub get_event_name: *const (),
     /// Method used to retrieve the Task name of the entry.
-    pub get_task: *mut (),
+    pub get_task: *const (),
     /// Method used to retrieve the Info string of the entry.
-    pub get_info: *mut (),
+    pub get_info: *const (),
     /// Method used to retrieve an unspecified auxiliary info of the trace
     /// record.
-    pub aux_info: *mut (),
+    pub aux_info: *const (),
     /// Method used to retrieve Id of the Event from its name.
-    pub find_event_id: *mut (),
+    pub find_event_id: *const (),
     /// Method used to retrieve the array of Ids of all Events.
-    pub get_all_event_ids: *mut (),
+    pub get_all_event_ids: *const (),
     /// Method used to dump the entry's content to string.
-    pub dump_entry: *mut (),
+    pub dump_entry: *const (),
     /// Method used to retrieve the array of all field names of a given
     /// event.
-    pub get_all_event_field_names: *mut (),
+    pub get_all_event_field_names: *const (),
     /// Method used to access the type of an event's data field.
-    pub get_event_field_type: *mut (),
+    pub get_event_field_type: *const (),
     /// Method used to access the value of an event's data field.
-    pub read_event_field_int64: *mut (),
+    pub read_event_field_int64: *const (),
     /// Method used to access the value of an event's data field.
-    pub read_record_field_int64: *mut (),
+    pub read_record_field_int64: *const (),
     /// Method used to load the data in the form of entries.
-    pub load_entries: *mut (),
+    pub load_entries: *const (),
     /// Method used to load the data in matrix form.
-    pub load_matrix: *mut (),
+    pub load_matrix: *const (),
     /// Generic data handle.
     pub handle: *mut c_void,
 }
@@ -194,7 +194,7 @@ pub struct kshark_data_stream {
     /// The number of plugins registered for this stream.
     pub n_plugins: c_int,
     /// System clock calibration function.
-    pub calib: *mut (), // XXX NOT IMPL (fn) - time_calib_func
+    pub calib: *const (), // XXX NOT IMPL (fn) - time_calib_func
     /// An array of time calibration constants.
     pub calib_array: *mut i64,
     /// The size of the array of time calibration constants.
