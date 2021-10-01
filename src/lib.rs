@@ -69,7 +69,7 @@ fn load_entries(
     let mut rows = Vec::with_capacity(TEST_EVENTS_NUM);
 
     for i in 0..TEST_EVENTS_NUM {
-        let mut entry = Box::new(Entry::default());
+        let mut entry = Entry::new_boxed();
 
         entry.stream_id = stream.stream_id as _;
         entry.event_id = (i % 5) as _;
@@ -113,7 +113,7 @@ pub extern "C" fn kshark_input_format() -> *const c_char {
 // KSHARK_INPUT_INITIALIZER @ libkshark-plugin.h
 #[no_mangle]
 pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int {
-    let mut interface = Box::new(GenericStreamInterface::default());
+    let mut interface = GenericStreamInterface::new_boxed();
 
     interface.get_pid = get_pid as _;
     interface.get_event_name = get_event_name as _;
@@ -123,8 +123,8 @@ pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int
     interface.load_entries = load_entries as _;
 
     let mut stream = from_raw_ptr_mut(stream_ptr).unwrap();
-
     stream.interface = Box::into_raw(interface);
+
     stream.n_cpus = TEST_CPUS_NUM as i32;
     stream.n_events = TEST_EVENTS_NUM as i32;
     stream.idle_pid = 0;

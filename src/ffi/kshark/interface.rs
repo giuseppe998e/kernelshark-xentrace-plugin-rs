@@ -44,6 +44,12 @@ pub struct GenericStreamInterface /* kshark_generic_stream_interface */ {
     pub handle: *const c_void,
 }
 
+impl GenericStreamInterface {
+    pub fn new_boxed() -> Box<Self> {
+        Box::new(GenericStreamInterface::default())
+    }
+}
+
 impl Default for GenericStreamInterface {
     fn default() -> Self {
         Self {

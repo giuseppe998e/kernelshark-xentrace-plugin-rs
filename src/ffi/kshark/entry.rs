@@ -32,6 +32,12 @@ pub struct Entry /* kshark_entry */ {
     pub ts: c_long,
 }
 
+impl Entry {
+    pub fn new_boxed() -> Box<Self> {
+        Box::new(Entry::default())
+    }
+}
+
 impl Default for Entry {
     fn default() -> Self {
         Self {
