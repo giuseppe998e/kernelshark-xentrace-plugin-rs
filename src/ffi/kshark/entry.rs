@@ -36,7 +36,13 @@ impl Default for Entry {
     fn default() -> Self {
         Self {
             next: null::<Entry>(),
-            ..Default::default()
+            visible: 0xFF, // Always visible
+            stream_id: Default::default(),
+            event_id: Default::default(),
+            cpu: Default::default(),
+            pid: Default::default(),
+            offset: Default::default(),
+            ts: Default::default(),
         }
     }
 }
