@@ -24,7 +24,7 @@ use ffi::kshark::{
     context::Context, entry::Entry, interface::GenericStreamInterface, stream::DataStream,
 };
 use libc::{c_char, c_int};
-use std::{alloc::System, fs::File, io::Read, path::Path, ptr::null};
+use std::{alloc::System, fs::File, io::Read, path::Path};
 use util::{
     pointer::{from_raw_ptr, from_raw_ptr_mut},
     string::{from_str_ptr, into_str_ptr},
@@ -39,51 +39,50 @@ const TEST_CPUS_NUM: usize = 8;
 
 static KSHARK_SOURCE_TYPE: &str = "xentrace_bin";
 
-fn get_pid(_stream_ptr: *mut DataStream, entry_ptr: *const Entry) -> c_int {
+fn get_pid(_stream_ptr: *const DataStream, entry_ptr: *const Entry) -> c_int {
     let entry = from_raw_ptr(entry_ptr).unwrap();
     entry.pid
 }
 
-fn get_task(_stream_ptr: *mut DataStream, _entry_ptr: *const Entry) -> *const c_char {
+fn get_task(_stream_ptr: *const DataStream, _entry_ptr: *const Entry) -> *const c_char {
     into_str_ptr("TASK")
 }
 
-fn get_event_name(_stream_ptr: *mut DataStream, _entry_ptr: *const Entry) -> *const c_char {
+fn get_event_name(_stream_ptr: *const DataStream, _entry_ptr: *const Entry) -> *const c_char {
     into_str_ptr("EVENT")
 }
 
-fn get_info(_stream_ptr: *mut DataStream, _entry_ptr: *const Entry) -> *const c_char {
+fn get_info(_stream_ptr: *const DataStream, _entry_ptr: *const Entry) -> *const c_char {
     into_str_ptr("INFO")
 }
 
-fn dump_entry(_stream_ptr: *mut DataStream, _entry_ptr: *const Entry) -> *const c_char {
+fn dump_entry(_stream_ptr: *const DataStream, _entry_ptr: *const Entry) -> *const c_char {
     into_str_ptr("DUMP")
 }
 
 fn load_entries(
-    stream_ptr: *mut DataStream,
+    stream_ptr: *const DataStream,
     _context_ptr: *const Context,
     rows_ptr: *mut *mut *mut Entry,
 ) -> isize {
     let stream = from_raw_ptr(stream_ptr).unwrap();
-    let mut rows = Box::new([null::<Entry>(); TEST_EVENTS_NUM]);
+    let mut rows = Vec::with_capacity(TEST_EVENTS_NUM);
 
     for i in 0..TEST_EVENTS_NUM {
         let mut entry = Box::new(Entry::default());
 
-        entry.visible = 0xff;
-        entry.stream_id = stream.stream_id as i16;
-        entry.event_id = (i % 5) as i16;
-        entry.cpu = (i % TEST_CPUS_NUM) as i16;
-        entry.pid = (10 + i % 2) as i32;
-        entry.ts = (1000000 + i * 10000) as i64;
-        entry.offset = i as i64;
+        entry.stream_id = stream.stream_id as _;
+        entry.event_id = (i % 5) as _;
+        entry.cpu = (i % TEST_CPUS_NUM) as _;
+        entry.pid = (10 + i % 2) as _;
+        entry.ts = (1000000 + i * 10000) as _;
+        entry.offset = i as _;
 
-        rows[i] = Box::into_raw(entry);
+        rows.push(Box::into_raw(entry));
     }
 
     unsafe {
-        *rows_ptr = Box::into_raw(rows) as _;
+        *rows_ptr = Box::into_raw(rows.into_boxed_slice()) as _;
     }
 
     TEST_EVENTS_NUM as isize
@@ -91,7 +90,7 @@ fn load_entries(
 
 // KSHARK_INPUT_CHECK @ libkshark-plugin.h
 #[no_mangle]
-pub extern "C" fn kshark_input_check(file_ptr: *const c_char, _frmt: *mut *mut c_char) -> bool {
+pub extern "C" fn kshark_input_check(file_ptr: *const c_char, _frmt: *const *const c_char) -> bool {
     let file_str = from_str_ptr(file_ptr).unwrap();
     let file_path = Path::new(file_str);
 
@@ -102,7 +101,7 @@ pub extern "C" fn kshark_input_check(file_ptr: *const c_char, _frmt: *mut *mut c
         u32::from_ne_bytes(buf)
     };
 
-    0x0001f003 == (hdr & 0x0fffffff) // XXX Must use interface/xen
+    xentrace_parser::TRC_TRACE_CPU_CHANGE == (hdr & 0x0fffffff) // XXX Must use interface/xen
 }
 
 // KSHARK_INPUT_FORMAT @ libkshark-plugin.h
@@ -116,7 +115,6 @@ pub extern "C" fn kshark_input_format() -> *const c_char {
 pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int {
     let mut interface = Box::new(GenericStreamInterface::default());
 
-    interface.type_ = 1; // KS_GENERIC_DATA_INTERFACE
     interface.get_pid = get_pid as _;
     interface.get_event_name = get_event_name as _;
     interface.get_info = get_info as _;
@@ -139,4 +137,4 @@ pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int
 
 // KSHARK_INPUT_DEINITIALIZER @ libkshark-plugin.h
 #[no_mangle]
-pub extern "C" fn kshark_input_deinitializer(_stream_ptr: *mut DataStream) {}
+pub extern "C" fn kshark_input_deinitializer(_stream_ptr: *const DataStream) {}

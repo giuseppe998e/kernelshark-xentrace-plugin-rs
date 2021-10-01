@@ -1,6 +1,6 @@
+use libc::c_char;
 use std::{
     ffi::{CStr, CString},
-    os::raw::c_char,
     str::Utf8Error,
 };
 

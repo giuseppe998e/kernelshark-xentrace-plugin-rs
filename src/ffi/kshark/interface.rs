@@ -47,7 +47,7 @@ pub struct GenericStreamInterface /* kshark_generic_stream_interface */ {
 impl Default for GenericStreamInterface {
     fn default() -> Self {
         Self {
-            type_: Default::default(),
+            type_: 1, // KS_GENERIC_DATA_INTERFACE
             get_pid: null::<c_void>(),
             get_event_id: null::<c_void>(),
             get_event_name: null::<c_void>(),
