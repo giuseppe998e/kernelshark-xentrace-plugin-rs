@@ -17,21 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
  * USA
  */
-mod interface;
+mod ffi;
 mod util;
 
-use interface::kshark::{
-    kshark_context, kshark_data_stream, kshark_entry, kshark_generic_stream_interface,
-    kshark_hash_id_add,
+use ffi::kshark::{
+    context::Context, entry::Entry, interface::GenericStreamInterface, stream::DataStream,
 };
-use std::{
-    alloc::System,
-    fs::File,
-    io::Read,
-    os::raw::{c_char, c_int},
-    path::Path,
-    ptr::null,
-};
+use libc::{c_char, c_int};
+use std::{alloc::System, fs::File, io::Read, path::Path, ptr::null};
 use util::{
     pointer::{from_raw_ptr, from_raw_ptr_mut},
     string::{from_str_ptr, into_str_ptr},
@@ -46,37 +39,37 @@ const TEST_CPUS_NUM: usize = 8;
 
 static KSHARK_SOURCE_TYPE: &str = "xentrace_bin";
 
-fn get_pid(_stream: *mut kshark_data_stream, entry_ptr: *mut kshark_entry) -> c_int {
+fn get_pid(_stream_ptr: *mut DataStream, entry_ptr: *const Entry) -> c_int {
     let entry = from_raw_ptr(entry_ptr).unwrap();
     entry.pid
 }
 
-fn get_task(_stream: *mut kshark_data_stream, _entry: *mut kshark_entry) -> *const c_char {
+fn get_task(_stream_ptr: *mut DataStream, _entry_ptr: *const Entry) -> *const c_char {
     into_str_ptr("TASK")
 }
 
-fn get_event_name(_stream: *mut kshark_data_stream, _entry: *mut kshark_entry) -> *const c_char {
+fn get_event_name(_stream_ptr: *mut DataStream, _entry_ptr: *const Entry) -> *const c_char {
     into_str_ptr("EVENT")
 }
 
-fn get_info(_stream: *mut kshark_data_stream, _entry: *mut kshark_entry) -> *const c_char {
+fn get_info(_stream_ptr: *mut DataStream, _entry_ptr: *const Entry) -> *const c_char {
     into_str_ptr("INFO")
 }
 
-fn dump_entry(_stream: *mut kshark_data_stream, _entry: *mut kshark_entry) -> *const c_char {
+fn dump_entry(_stream_ptr: *mut DataStream, _entry_ptr: *const Entry) -> *const c_char {
     into_str_ptr("DUMP")
 }
 
 fn load_entries(
-    stream_ptr: *mut kshark_data_stream,
-    _context: *const kshark_context,
-    data_rows: *mut *mut *mut kshark_entry,
+    stream_ptr: *mut DataStream,
+    _context_ptr: *const Context,
+    rows_ptr: *mut *mut *mut Entry,
 ) -> isize {
     let stream = from_raw_ptr(stream_ptr).unwrap();
-    let mut rows = Box::new([null::<kshark_entry>(); TEST_EVENTS_NUM]);
+    let mut rows = Box::new([null::<Entry>(); TEST_EVENTS_NUM]);
 
     for i in 0..TEST_EVENTS_NUM {
-        let mut entry = Box::new(kshark_entry::default());
+        let mut entry = Box::new(Entry::default());
 
         entry.visible = 0xff;
         entry.stream_id = stream.stream_id as i16;
@@ -90,7 +83,7 @@ fn load_entries(
     }
 
     unsafe {
-        *data_rows = Box::into_raw(rows) as _;
+        *rows_ptr = Box::into_raw(rows) as _;
     }
 
     TEST_EVENTS_NUM as isize
@@ -120,8 +113,8 @@ pub extern "C" fn kshark_input_format() -> *const c_char {
 
 // KSHARK_INPUT_INITIALIZER @ libkshark-plugin.h
 #[no_mangle]
-pub extern "C" fn kshark_input_initializer(stream_ptr: *mut kshark_data_stream) -> c_int {
-    let mut interface = Box::new(kshark_generic_stream_interface::default());
+pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int {
+    let mut interface = Box::new(GenericStreamInterface::default());
 
     interface.type_ = 1; // KS_GENERIC_DATA_INTERFACE
     interface.get_pid = get_pid as _;
@@ -138,14 +131,12 @@ pub extern "C" fn kshark_input_initializer(stream_ptr: *mut kshark_data_stream) 
     stream.n_events = TEST_EVENTS_NUM as i32;
     stream.idle_pid = 0;
 
-    unsafe {
-        kshark_hash_id_add(stream.tasks, 10);
-        kshark_hash_id_add(stream.tasks, 11);
-    }
+    stream.add_task_id(10);
+    stream.add_task_id(11);
 
     0
 }
 
 // KSHARK_INPUT_DEINITIALIZER @ libkshark-plugin.h
 #[no_mangle]
-pub extern "C" fn kshark_input_deinitializer(_stream: *mut kshark_data_stream) {}
+pub extern "C" fn kshark_input_deinitializer(_stream_ptr: *mut DataStream) {}

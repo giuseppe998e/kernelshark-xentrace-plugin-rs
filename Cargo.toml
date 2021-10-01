@@ -10,6 +10,7 @@ repository = ""
 edition = "2018"
 
 [dependencies]
+libc = "0.2"
 xentrace-parser = "0.2"
 
 [lib]
