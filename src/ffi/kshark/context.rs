@@ -32,10 +32,14 @@ impl Default for Context {
     fn default() -> Self {
         Self {
             stream: null::<*const DataStream>(),
+            n_streams: Default::default(),
+            stream_info: Default::default(),
+            filter_mask: Default::default(),
             collections: null::<c_void>(),
             inputs: null::<c_void>(),
+            n_inputs: Default::default(),
             plugins: null::<c_void>(),
-            ..Default::default()
+            n_plugins: Default::default(),
         }
     }
 }

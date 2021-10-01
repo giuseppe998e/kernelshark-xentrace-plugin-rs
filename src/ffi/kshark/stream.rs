@@ -1,7 +1,7 @@
-use super::{interface::GenericStreamInterface, pthread_mutex_t};
+use super::{interface::GenericStreamInterface, PthreadMutexU};
 use crate::util::string::from_str_ptr;
 use libc::{c_char, c_int, c_long, c_ushort, c_void, size_t};
-use std::{ptr::null, str::Utf8Error};
+use std::ptr::null;
 
 extern "C" {
     fn kshark_hash_id_add(
@@ -29,7 +29,7 @@ pub struct DataStream /* kshark_data_stream */ {
     /// Hash table of task PIDs.
     pub tasks: *const c_void, // XXX NOT IMPL - kshark_hash_id
     /// A mutex, used to protect the access to the input file.
-    pub input_mutex: pthread_mutex_t,
+    pub input_mutex: PthreadMutexU,
     /// Hash of tasks to filter on.
     pub show_task_filter: *const c_void, // XXX NOT IMPL - kshark_hash_id
     /// Hash of tasks to not display.
@@ -68,31 +68,41 @@ impl DataStream {
         unsafe { kshark_hash_id_add(self.tasks, id) }
     }
 
-    pub fn get_file_path(&self) -> Result<&str, Utf8Error> {
-        from_str_ptr(self.file)
+    pub fn get_file_path(&self) -> &str {
+        from_str_ptr(self.file).unwrap_or_default()
+    }
+
+    pub fn get_interface_ref(&self) -> Option<&GenericStreamInterface> {
+        unsafe { self.interface.as_ref() }
     }
 }
 
 impl Default for DataStream {
     fn default() -> Self {
         Self {
+            stream_id: Default::default(),
+            n_cpus: Default::default(),
+            n_events: Default::default(),
+            idle_pid: Default::default(),
             file: null::<c_char>(),
             name: null::<c_char>(),
             tasks: null::<c_void>(),
-            input_mutex: pthread_mutex_t { __align: 0 },
+            input_mutex: PthreadMutexU { align: 0 },
             show_task_filter: null::<c_void>(),
             hide_task_filter: null::<c_void>(),
             show_event_filter: null::<c_void>(),
             hide_event_filter: null::<c_void>(),
             show_cpu_filter: null::<c_void>(),
             hide_cpu_filter: null::<c_void>(),
+            data_format: Default::default(),
             plugins: null::<c_void>(),
+            n_plugins: Default::default(),
             calib: null::<c_void>(),
             calib_array: null::<c_long>(),
+            calib_array_size: Default::default(),
             event_handlers: null::<c_void>(),
             draw_handlers: null::<c_void>(),
             interface: null::<GenericStreamInterface>(),
-            ..Default::default()
         }
     }
 }

@@ -9,37 +9,37 @@ use std::ptr::null;
 // Required structs from pthread.h
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct __pthread_internal_list {
-    pub __prev: *const __pthread_internal_list,
-    pub __next: *const __pthread_internal_list,
+pub struct PthreadInternalList {
+    pub prev: *const PthreadInternalList,
+    pub next: *const PthreadInternalList,
 }
 
-impl Default for __pthread_internal_list {
+impl Default for PthreadInternalList {
     fn default() -> Self {
         Self {
-            __prev: null::<__pthread_internal_list>(),
-            __next: null::<__pthread_internal_list>(),
+            prev: null::<PthreadInternalList>(),
+            next: null::<PthreadInternalList>(),
         }
     }
 }
 
 #[repr(C)]
 #[derive(Debug, Default, Copy, Clone)]
-pub struct __pthread_mutex_s {
-    pub __lock: c_int,
-    pub __count: c_uint,
-    pub __owner: c_int,
-    pub __nusers: c_uint,
-    pub __kind: c_int,
-    pub __spins: c_short,
-    pub __elision: c_short,
-    pub __list: __pthread_internal_list,
+pub struct PthreadMutexS {
+    pub lock: c_int,
+    pub count: c_uint,
+    pub owner: c_int,
+    pub nusers: c_uint,
+    pub kind: c_int,
+    pub spins: c_short,
+    pub elision: c_short,
+    pub list: PthreadInternalList,
 }
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub union pthread_mutex_t {
-    pub __data: __pthread_mutex_s,
-    pub __size: [c_char; 40usize],
-    pub __align: c_long,
+pub union PthreadMutexU {
+    pub data: PthreadMutexS,
+    pub size: [c_char; 40usize],
+    pub align: c_long,
 }
