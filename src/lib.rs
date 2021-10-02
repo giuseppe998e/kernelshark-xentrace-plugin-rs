@@ -21,8 +21,8 @@ mod ffi;
 mod util;
 
 use ffi::kshark::{
-    KS_PLUGIN_UNTOUCHED_MASK, KS_EMPTY_BIN,
     context::Context, entry::Entry, interface::GenericStreamInterface, stream::DataStream,
+    KS_EMPTY_BIN, KS_PLUGIN_UNTOUCHED_MASK,
 };
 use libc::{c_char, c_int, c_void};
 use std::{alloc::System, convert::TryInto, fs::File, io::Read, path::Path, ptr::null_mut};
@@ -72,10 +72,7 @@ fn load_entries(
     let stream = from_raw_ptr(stream_ptr).unwrap();
     let parser: &Parser = stream.get_interface().get_data_handler().unwrap();
 
-    let first_tsc = parser
-        .get_records()
-        .get(0)
-        .map(|r| r.get_event().get_tsc());
+    let first_tsc = parser.get_records().get(0).map(|r| r.get_event().get_tsc());
 
     let mut offset = 0;
     let rows: Vec<*mut Entry> = parser
@@ -99,7 +96,7 @@ fn load_entries(
                         not_def => not_def.to_id() + 1,
                     }
                     .into();
-    
+
                     stream.add_task_id(task_id);
                     task_id
                 }

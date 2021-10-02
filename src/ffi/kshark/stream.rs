@@ -1,6 +1,6 @@
 use super::interface::GenericStreamInterface;
 use crate::util::string::from_str_ptr;
-use libc::{c_char, c_int, c_uint, c_long, c_short, c_ushort, c_void, size_t};
+use libc::{c_char, c_int, c_long, c_short, c_uint, c_ushort, c_void, size_t};
 use std::ptr::null_mut;
 
 extern "C" {
