@@ -18,6 +18,7 @@
  * USA
  */
 mod ffi;
+mod stringify;
 mod util;
 
 use ffi::kshark::{
@@ -26,6 +27,7 @@ use ffi::kshark::{
 };
 use libc::{c_char, c_int, c_void};
 use std::{alloc::System, convert::TryInto, fs::File, io::Read, path::Path, ptr::null_mut};
+use stringify::{get_record_info_str, get_record_name_str, get_record_task_str};
 use util::{
     get_record,
     pointer::{from_raw_ptr, from_raw_ptr_mut},
@@ -51,16 +53,7 @@ fn get_pid(_stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
 fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     let record = get_record(stream_ptr, entry_ptr);
     let task_str = match record {
-        Some(r) => {
-            let dom = r.get_domain();
-            let dom_str: String = match dom.get_type() {
-                DomainType::Idle => "idle".to_owned(),
-                DomainType::Default => "default".to_owned(),
-                not_idle_or_def => format!("d{}", not_idle_or_def.to_id()),
-            };
-
-            format!("{}/v{}", dom_str, dom.get_vcpu())
-        }
+        Some(r) => get_record_task_str(r),
         None => "unknown".to_owned(),
     };
 
@@ -70,7 +63,7 @@ fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
 fn get_event_name(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     let record = get_record(stream_ptr, entry_ptr);
     let ename_str = match record {
-        Some(r) => format!("{:#010X}", r.get_event().get_code()),
+        Some(r) => get_record_name_str(r),
         None => "unknown".to_owned(),
     };
 
@@ -80,15 +73,24 @@ fn get_event_name(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_
 fn get_info(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     let record = get_record(stream_ptr, entry_ptr);
     let einfo_str = match record {
-        Some(r) => format!("{:?}", r.get_event().get_extra()),
+        Some(r) => get_record_info_str(r),
         None => "unknown".to_owned(),
     };
 
     into_str_ptr(einfo_str)
 }
 
-fn dump_entry(_stream_ptr: *mut DataStream, _entry_ptr: *mut Entry) -> *mut c_char {
-    into_str_ptr("DUMP")
+fn dump_entry(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
+    let record = get_record(stream_ptr, entry_ptr);
+    let (ename_str, einfo_str) = match record {
+        Some(r) => (get_record_name_str(r), get_record_info_str(r)),
+        None => ("unknown".to_owned(), "unknown".to_owned()),
+    };
+
+    into_str_ptr(format!(
+        "Record {{ Name: \"{}\", Info: \"{}\" }}",
+        ename_str, einfo_str
+    ))
 }
 
 fn load_entries(
