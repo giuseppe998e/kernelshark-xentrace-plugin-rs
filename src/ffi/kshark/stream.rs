@@ -1,6 +1,6 @@
-use super::{interface::GenericStreamInterface, PthreadMutexU};
+use super::interface::GenericStreamInterface;
 use crate::util::string::from_str_ptr;
-use libc::{c_char, c_int, c_long, c_ushort, c_void, size_t};
+use libc::{c_char, c_int, c_uint, c_long, c_short, c_ushort, c_void, size_t};
 use std::ptr::null_mut;
 
 extern "C" {
@@ -109,4 +109,42 @@ impl Default for DataStream {
             interface: null_mut::<GenericStreamInterface>(),
         }
     }
+}
+
+// Required structs from pthread.h
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct PthreadInternalList {
+    pub prev: *mut PthreadInternalList,
+    pub next: *mut PthreadInternalList,
+}
+
+impl Default for PthreadInternalList {
+    fn default() -> Self {
+        Self {
+            prev: null_mut::<PthreadInternalList>(),
+            next: null_mut::<PthreadInternalList>(),
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct PthreadMutexS {
+    pub lock: c_int,
+    pub count: c_uint,
+    pub owner: c_int,
+    pub nusers: c_uint,
+    pub kind: c_int,
+    pub spins: c_short,
+    pub elision: c_short,
+    pub list: PthreadInternalList,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union PthreadMutexU {
+    pub data: PthreadMutexS,
+    pub size: [c_char; 40usize],
+    pub align: c_long,
 }
