@@ -109,7 +109,7 @@ pub extern "C" fn kshark_input_check(file_ptr: *const c_char, _frmt: *const *con
 // KSHARK_INPUT_FORMAT @ libkshark-plugin.h
 #[no_mangle]
 pub extern "C" fn kshark_input_format() -> *const c_char {
-    KSHARK_SOURCE_TYPE.as_ptr() as *const _
+    KSHARK_SOURCE_TYPE.as_ptr() as _
 }
 
 // KSHARK_INPUT_INITIALIZER @ libkshark-plugin.h
