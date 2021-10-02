@@ -41,11 +41,10 @@ static A: System = System;
 static KSHARK_SOURCE_TYPE: &str = "xentrace_bin";
 
 fn get_pid(_stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
-    let entry = from_raw_ptr(entry_ptr).unwrap();
-    if entry.visible & KS_PLUGIN_UNTOUCHED_MASK > 0 {
-        entry.pid
-    } else {
-        KS_EMPTY_BIN
+    let entry = from_raw_ptr(entry_ptr);
+    match entry {
+        Some(e) if e.visible & KS_PLUGIN_UNTOUCHED_MASK > 0 => e.pid,
+        _ => KS_EMPTY_BIN
     }
 }
 
