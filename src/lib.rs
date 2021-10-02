@@ -68,13 +68,23 @@ fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
 }
 
 fn get_event_name(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
-    let record = get_record(stream_ptr, entry_ptr).unwrap();
-    into_str_ptr(format!("{:#010X}", record.get_event().get_code()))
+    let record = get_record(stream_ptr, entry_ptr);
+    let ename_str = match record {
+        Some(r) => format!("{:#010X}", r.get_event().get_code()),
+        None => "unknown".to_owned(),
+    };
+
+    into_str_ptr(ename_str)
 }
 
 fn get_info(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
-    let record = get_record(stream_ptr, entry_ptr).unwrap();
-    into_str_ptr(format!("{:?}", record.get_event().get_extra()))
+    let record = get_record(stream_ptr, entry_ptr);
+    let einfo_str = match record {
+        Some(r) => format!("{:?}", r.get_event().get_extra()),
+        None => "unknown".to_owned(),
+    };
+
+    into_str_ptr(einfo_str)
 }
 
 fn dump_entry(_stream_ptr: *mut DataStream, _entry_ptr: *mut Entry) -> *mut c_char {
