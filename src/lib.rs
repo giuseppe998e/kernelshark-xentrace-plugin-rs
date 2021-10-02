@@ -28,14 +28,13 @@ use std::{alloc::System, convert::TryInto, fs::File, io::Read, path::Path};
 use util::{
     pointer::{from_raw_ptr, from_raw_ptr_mut},
     string::{from_str_ptr, into_str_ptr},
+    tsc_to_ns,
 };
+use xentrace_parser::{DomainType, Parser};
 
 // Use System allocator (malloc on Linux)
 #[global_allocator]
 static A: System = System;
-
-const TEST_EVENTS_NUM: usize = 50000;
-const TEST_CPUS_NUM: usize = 8;
 
 static KSHARK_SOURCE_TYPE: &str = "xentrace_bin";
 
@@ -66,26 +65,49 @@ fn load_entries(
     rows_ptr: *mut *mut *mut Entry,
 ) -> isize {
     let stream = from_raw_ptr(stream_ptr).unwrap();
-    let mut rows = Vec::with_capacity(TEST_EVENTS_NUM);
+    let xtparser: &Parser = stream.get_interface().get_data_handler().unwrap();
 
-    for i in 0..TEST_EVENTS_NUM {
-        let mut entry = Entry::new_boxed();
+    let first_tsc = xtparser.get_records().get(0).map(|r| r.get_event().get_tsc());
 
-        entry.stream_id = stream.stream_id as _;
-        entry.event_id = (i % 5) as _;
-        entry.cpu = (i % TEST_CPUS_NUM) as _;
-        entry.pid = (10 + i % 2) as _;
-        entry.ts = (1000000 + i * 10000) as _;
-        entry.offset = i as _;
+    let mut offset = 0;
+    let rows: Vec<*mut Entry> = xtparser
+        .get_records()
+        .iter()
+        .map(|r| {
+            let mut entry = Entry::new_boxed();
 
-        rows.push(Box::into_raw(entry));
-    }
+            entry.stream_id = stream.stream_id.try_into().unwrap();
+            entry.cpu = r.get_cpu().try_into().unwrap();
+            entry.ts = tsc_to_ns(r.get_event().get_tsc(), first_tsc, None);
+            entry.event_id = (r.get_event().get_code() % (i16::MAX as u32))
+                .try_into()
+                .unwrap();
+
+            let domtype = r.get_domain().get_type();
+            if domtype != DomainType::Idle {
+                let task_id = if domtype == DomainType::Default {
+                    DomainType::Default.to_id()
+                } else {
+                    domtype.to_id() + 1
+                }
+                .into();
+
+                stream.add_task_id(task_id);
+                entry.pid = task_id;
+            }
+
+            entry.offset = offset;
+            offset += 1;
+
+            Box::into_raw(entry)
+        })
+        .collect();
 
     unsafe {
         *rows_ptr = Box::into_raw(rows.into_boxed_slice()) as _;
     }
 
-    TEST_EVENTS_NUM.try_into().unwrap()
+    xtparser.get_records().len().try_into().unwrap()
 }
 
 // KSHARK_INPUT_CHECK @ libkshark-plugin.h
@@ -94,16 +116,17 @@ pub extern "C" fn kshark_input_check(file_ptr: *const c_char, _frmt: *const *con
     let file_str = from_str_ptr(file_ptr).unwrap();
     let file_path = Path::new(file_str);
 
-    let ecode = match File::open(file_path) {
-        Ok(mut fp) => {
+    if let Ok(mut fp) = File::open(file_path) {
+        let ecode = {
             let mut buf = [0u8; 4];
             fp.read_exact(&mut buf).unwrap_or_default();
             0x0fffffff & u32::from_ne_bytes(buf)
-        }
-        Err(_) => 0,
-    };
+        };
 
-    xentrace_parser::TRC_TRACE_CPU_CHANGE == ecode // XXX Must use interface/xen
+        return xentrace_parser::TRC_TRACE_CPU_CHANGE == ecode; // XXX Must use interface/xen
+    }
+
+    false
 }
 
 // KSHARK_INPUT_FORMAT @ libkshark-plugin.h
@@ -115,24 +138,26 @@ pub extern "C" fn kshark_input_format() -> *const c_char {
 // KSHARK_INPUT_INITIALIZER @ libkshark-plugin.h
 #[no_mangle]
 pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int {
-    let mut interface = GenericStreamInterface::new_boxed();
-
-    interface.get_pid = get_pid as _;
-    interface.get_event_name = get_event_name as _;
-    interface.get_info = get_info as _;
-    interface.get_task = get_task as _;
-    interface.dump_entry = dump_entry as _;
-    interface.load_entries = load_entries as _;
-
     let mut stream = from_raw_ptr_mut(stream_ptr).unwrap();
-    stream.interface = Box::into_raw(interface);
+    let xtparser = Box::new(Parser::new(stream.get_file_path()).unwrap());
 
-    stream.n_cpus = TEST_CPUS_NUM.try_into().unwrap();
-    stream.n_events = TEST_EVENTS_NUM.try_into().unwrap();
     stream.idle_pid = 0;
+    stream.n_cpus = xtparser.cpu_count().try_into().unwrap();
+    stream.n_events = xtparser.get_records().len().try_into().unwrap();
 
-    stream.add_task_id(10);
-    stream.add_task_id(11);
+    stream.interface = {
+        let mut interface = GenericStreamInterface::new_boxed();
+
+        interface.get_pid = get_pid as _;
+        interface.get_event_name = get_event_name as _;
+        interface.get_info = get_info as _;
+        interface.get_task = get_task as _;
+        interface.dump_entry = dump_entry as _;
+        interface.load_entries = load_entries as _;
+        interface.handle = Box::into_raw(xtparser) as _;
+
+        Box::into_raw(interface)
+    };
 
     0
 }
