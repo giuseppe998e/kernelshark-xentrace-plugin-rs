@@ -52,8 +52,8 @@ fn get_pid(_stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
 fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     let record = get_record(stream_ptr, entry_ptr);
     let task_str = match record {
-        Some(val) => {
-            let dom = val.get_domain();
+        Some(r) => {
+            let dom = r.get_domain();
             let dom_str: String = match dom.get_type() {
                 DomainType::Idle => "idle".to_owned(),
                 DomainType::Default => "default".to_owned(),
