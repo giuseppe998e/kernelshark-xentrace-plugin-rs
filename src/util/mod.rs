@@ -19,12 +19,12 @@ pub(crate) fn tsc_to_ns(
         (cpu_hz << 10) / 1_000_000_000
     };
 
-    let result_ns = match first_tsc {
-        Some(v) => ((tsc - v) << 10) / cpu_qhz,
-        None => tsc / cpu_qhz,
+    let tsc = match first_tsc {
+        Some(v) => (tsc - v) << 10,
+        None => tsc,
     };
 
-    result_ns.try_into().unwrap()
+    (tsc / cpu_qhz).try_into().unwrap()
 }
 
 pub(crate) fn get_record<'a>(
