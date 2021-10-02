@@ -21,6 +21,7 @@ mod ffi;
 mod util;
 
 use ffi::kshark::{
+    KS_PLUGIN_UNTOUCHED_MASK, KS_EMPTY_BIN,
     context::Context, entry::Entry, interface::GenericStreamInterface, stream::DataStream,
 };
 use libc::{c_char, c_int, c_void};
@@ -40,7 +41,11 @@ static KSHARK_SOURCE_TYPE: &str = "xentrace_bin";
 
 fn get_pid(_stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
     let entry = from_raw_ptr(entry_ptr).unwrap();
-    entry.pid
+    if entry.visible & KS_PLUGIN_UNTOUCHED_MASK > 0 {
+        entry.pid
+    } else {
+        KS_EMPTY_BIN
+    }
 }
 
 fn get_task(_stream_ptr: *mut DataStream, _entry_ptr: *mut Entry) -> *mut c_char {
