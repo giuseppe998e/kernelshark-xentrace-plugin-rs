@@ -98,7 +98,7 @@ pub extern "C" fn kshark_input_check(file_ptr: *const c_char, _frmt: *const *con
         Ok(mut fp) => {
             let mut buf = [0u8; 4];
             fp.read_exact(&mut buf).unwrap_or_default();
-            u32::from_ne_bytes(buf) & 0x0fffffff
+            0x0fffffff & u32::from_ne_bytes(buf)
         }
         Err(_) => 0,
     };
