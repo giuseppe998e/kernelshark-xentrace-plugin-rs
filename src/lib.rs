@@ -50,15 +50,22 @@ fn get_pid(_stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
 }
 
 fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
-    let record = get_record(stream_ptr, entry_ptr).unwrap();
+    let record = get_record(stream_ptr, entry_ptr);
+    let task_str = match record {
+        Some(val) => {
+            let rdom = val.get_domain();
+            let rdom_str: String = match rdom.get_type() {
+                DomainType::Idle => "idle".to_owned(),
+                DomainType::Default => "default".to_owned(),
+                not_idle_or_def => format!("d{}", not_idle_or_def.to_id()),
+            };
 
-    let dom: String = match record.get_domain().get_type() {
-        DomainType::Idle => "idle".to_owned(),
-        DomainType::Default => "default".to_owned(),
-        not_idle_or_def => format!("d{}", not_idle_or_def.to_id()),
+            format!("{}/v{}", rdom_str, rdom.get_vcpu())
+        }
+        None => "unknown".to_owned(),
     };
 
-    into_str_ptr(format!("{}/v{}", dom, record.get_domain().get_vcpu()))
+    into_str_ptr(task_str)
 }
 
 fn get_event_name(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
