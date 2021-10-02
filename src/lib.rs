@@ -17,135 +17,182 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
  * USA
  */
-mod interface;
+mod ffi;
 mod util;
 
-use interface::kshark::{
-    kshark_context, kshark_data_stream, kshark_entry, kshark_generic_stream_interface,
-    kshark_hash_id_add,
+use ffi::kshark::{
+    context::Context, entry::Entry, interface::GenericStreamInterface, stream::DataStream,
+    KS_EMPTY_BIN, KS_PLUGIN_UNTOUCHED_MASK,
 };
-use std::{
-    alloc::System,
-    fs::File,
-    io::Read,
-    os::raw::{c_char, c_int},
-    path::Path,
-    ptr::null,
-};
+use libc::{c_char, c_int, c_void};
+use std::{alloc::System, convert::TryInto, fs::File, io::Read, path::Path, ptr::null_mut};
 use util::{
+    get_parser_instance,
     pointer::{from_raw_ptr, from_raw_ptr_mut},
     string::{from_str_ptr, into_str_ptr},
+    tsc_to_ns,
 };
+use xentrace_parser::{DomainType, Parser, Record};
 
 // Use System allocator (malloc on Linux)
 #[global_allocator]
 static A: System = System;
 
-const TEST_EVENTS_NUM: usize = 50000;
-const TEST_CPUS_NUM: usize = 8;
-
 static KSHARK_SOURCE_TYPE: &str = "xentrace_bin";
 
-fn get_pid(_stream: *mut kshark_data_stream, entry_ptr: *mut kshark_entry) -> c_int {
+fn get_pid(_stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
     let entry = from_raw_ptr(entry_ptr).unwrap();
-    entry.pid
+    if entry.visible & KS_PLUGIN_UNTOUCHED_MASK > 0 {
+        entry.pid
+    } else {
+        KS_EMPTY_BIN
+    }
 }
 
-fn get_task(_stream: *mut kshark_data_stream, _entry: *mut kshark_entry) -> *const c_char {
-    into_str_ptr("TASK")
+fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
+    let record: &Record = {
+        let parser = get_parser_instance(stream_ptr);
+        let entry = from_raw_ptr(entry_ptr).unwrap();
+
+        let record = parser.get_records().get(entry.offset as usize);
+        if record.is_none() {
+            return into_str_ptr("unknown");
+        }
+
+        record.unwrap()
+    };
+
+    let dom: String = match record.get_domain().get_type() {
+        DomainType::Idle => "idle".to_owned(),
+        DomainType::Default => "default".to_owned(),
+        not_idle_or_def => format!("d{}", not_idle_or_def.to_id()),
+    };
+
+    into_str_ptr(format!("{}/v{}", dom, record.get_domain().get_vcpu()))
 }
 
-fn get_event_name(_stream: *mut kshark_data_stream, _entry: *mut kshark_entry) -> *const c_char {
+fn get_event_name(_stream_ptr: *mut DataStream, _entry_ptr: *mut Entry) -> *mut c_char {
     into_str_ptr("EVENT")
 }
 
-fn get_info(_stream: *mut kshark_data_stream, _entry: *mut kshark_entry) -> *const c_char {
+fn get_info(_stream_ptr: *mut DataStream, _entry_ptr: *mut Entry) -> *mut c_char {
     into_str_ptr("INFO")
 }
 
-fn dump_entry(_stream: *mut kshark_data_stream, _entry: *mut kshark_entry) -> *const c_char {
+fn dump_entry(_stream_ptr: *mut DataStream, _entry_ptr: *mut Entry) -> *mut c_char {
     into_str_ptr("DUMP")
 }
 
 fn load_entries(
-    stream_ptr: *mut kshark_data_stream,
-    _context: *const kshark_context,
-    data_rows: *mut *mut *mut kshark_entry,
+    stream_ptr: *mut DataStream,
+    _context_ptr: *mut Context,
+    rows_ptr: *mut *mut *mut Entry,
 ) -> isize {
     let stream = from_raw_ptr(stream_ptr).unwrap();
-    let mut rows = Box::new([null::<kshark_entry>(); TEST_EVENTS_NUM]);
+    let parser: &Parser = stream.get_interface().get_data_handler().unwrap();
 
-    for i in 0..TEST_EVENTS_NUM {
-        let mut entry = Box::new(kshark_entry::default());
+    let first_tsc = parser.get_records().get(0).map(|r| r.get_event().get_tsc());
 
-        entry.visible = 0xff;
-        entry.stream_id = stream.stream_id as i16;
-        entry.event_id = (i % 5) as i16;
-        entry.cpu = (i % TEST_CPUS_NUM) as i16;
-        entry.pid = (10 + i % 2) as i32;
-        entry.ts = (1000000 + i * 10000) as i64;
-        entry.offset = i as i64;
+    let mut offset = 0;
+    let rows: Vec<*mut Entry> = parser
+        .get_records()
+        .iter()
+        .map(|r| {
+            let mut entry = Entry::new_boxed();
 
-        rows[i] = Box::into_raw(entry);
-    }
+            entry.stream_id = stream.stream_id.try_into().unwrap();
+            entry.cpu = r.get_cpu().try_into().unwrap();
+            entry.ts = tsc_to_ns(r.get_event().get_tsc(), first_tsc, None);
+            entry.event_id = (r.get_event().get_code() % (i16::MAX as u32))
+                .try_into()
+                .unwrap();
+
+            entry.pid = match r.get_domain().get_type() {
+                DomainType::Idle => 0,
+                not_idle => {
+                    let task_id = match not_idle {
+                        DomainType::Default => not_idle.to_id() as i32,
+                        _ => r.get_domain().as_u32() as i32 + 1,
+                    };
+
+                    stream.add_task_id(task_id);
+                    task_id
+                }
+            };
+
+            entry.offset = offset;
+            offset += 1;
+
+            Box::into_raw(entry)
+        })
+        .collect();
 
     unsafe {
-        *data_rows = Box::into_raw(rows) as _;
+        *rows_ptr = Box::into_raw(rows.into_boxed_slice()) as _;
     }
 
-    TEST_EVENTS_NUM as isize
+    parser.get_records().len().try_into().unwrap()
 }
 
 // KSHARK_INPUT_CHECK @ libkshark-plugin.h
 #[no_mangle]
-pub extern "C" fn kshark_input_check(file_ptr: *const c_char, _frmt: *mut *mut c_char) -> bool {
+pub extern "C" fn kshark_input_check(file_ptr: *mut c_char, _frmt: *mut *mut c_char) -> bool {
     let file_str = from_str_ptr(file_ptr).unwrap();
     let file_path = Path::new(file_str);
 
-    let hdr = {
-        let mut file_buf = File::open(file_path).unwrap();
-        let mut buf = [0u8; 4];
-        file_buf.read_exact(&mut buf).unwrap();
-        u32::from_ne_bytes(buf)
-    };
+    if let Ok(mut fp) = File::open(file_path) {
+        let ecode = {
+            let mut buf = [0u8; 4];
+            fp.read_exact(&mut buf).unwrap_or_default();
+            0x0fffffff & u32::from_ne_bytes(buf)
+        };
 
-    0x0001f003 == (hdr & 0x0fffffff) // XXX Must use interface/xen
+        return xentrace_parser::TRC_TRACE_CPU_CHANGE == ecode; // XXX Must use interface/xen
+    }
+
+    false
 }
 
 // KSHARK_INPUT_FORMAT @ libkshark-plugin.h
 #[no_mangle]
-pub extern "C" fn kshark_input_format() -> *const c_char {
-    KSHARK_SOURCE_TYPE.as_ptr() as *const _
+pub extern "C" fn kshark_input_format() -> *mut c_char {
+    KSHARK_SOURCE_TYPE.as_ptr() as _
 }
 
 // KSHARK_INPUT_INITIALIZER @ libkshark-plugin.h
 #[no_mangle]
-pub extern "C" fn kshark_input_initializer(stream_ptr: *mut kshark_data_stream) -> c_int {
-    let mut interface = Box::new(kshark_generic_stream_interface::default());
-
-    interface.type_ = 1; // KS_GENERIC_DATA_INTERFACE
-    interface.get_pid = get_pid as _;
-    interface.get_event_name = get_event_name as _;
-    interface.get_info = get_info as _;
-    interface.get_task = get_task as _;
-    interface.dump_entry = dump_entry as _;
-    interface.load_entries = load_entries as _;
-
+pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int {
     let mut stream = from_raw_ptr_mut(stream_ptr).unwrap();
+    let parser = Box::new(Parser::new(stream.get_file_path()).unwrap());
 
-    stream.interface = Box::into_raw(interface);
-    stream.n_cpus = TEST_CPUS_NUM as i32;
-    stream.n_events = TEST_EVENTS_NUM as i32;
     stream.idle_pid = 0;
+    stream.n_cpus = parser.cpu_count().try_into().unwrap();
+    stream.n_events = parser.get_records().len().try_into().unwrap();
 
-    unsafe {
-        kshark_hash_id_add(stream.tasks, 10);
-        kshark_hash_id_add(stream.tasks, 11);
-    }
+    stream.interface = {
+        let mut interface = GenericStreamInterface::new_boxed();
+
+        interface.get_pid = get_pid as _;
+        interface.get_task = get_task as _;
+        interface.get_event_name = get_event_name as _;
+        interface.get_info = get_info as _;
+        interface.dump_entry = dump_entry as _;
+        interface.load_entries = load_entries as _;
+        interface.handle = Box::into_raw(parser) as _;
+
+        Box::into_raw(interface)
+    };
 
     0
 }
 
 // KSHARK_INPUT_DEINITIALIZER @ libkshark-plugin.h
 #[no_mangle]
-pub extern "C" fn kshark_input_deinitializer(_stream: *mut kshark_data_stream) {}
+pub extern "C" fn kshark_input_deinitializer(stream_ptr: *mut DataStream) {
+    let stream = from_raw_ptr(stream_ptr).unwrap();
+    let interface = stream.get_mut_interface();
+    let parser: Box<Parser> = unsafe { Box::from_raw(interface.handle as _) };
+
+    drop(parser);
+    interface.handle = null_mut::<c_void>();
+}

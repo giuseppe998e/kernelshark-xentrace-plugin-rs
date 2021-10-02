@@ -10,13 +10,14 @@ repository = ""
 edition = "2018"
 
 [dependencies]
+libc = "0.2"
 xentrace-parser = "0.2"
 
 [lib]
 crate-type = ["cdylib"]
 
 [profile.release] # Optimized for code size (https://github.com/johnthagen/min-sized-rust)
-opt-level = "z"
+opt-level = 3
 lto = true
 codegen-units = 1
 panic = "abort"
