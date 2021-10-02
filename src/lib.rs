@@ -44,7 +44,7 @@ fn get_pid(_stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
     let entry = from_raw_ptr(entry_ptr);
     match entry {
         Some(e) if e.visible & KS_PLUGIN_UNTOUCHED_MASK > 0 => e.pid,
-        _ => KS_EMPTY_BIN
+        _ => KS_EMPTY_BIN,
     }
 }
 
@@ -135,17 +135,16 @@ fn load_entries(
 // KSHARK_INPUT_CHECK @ libkshark-plugin.h
 #[no_mangle]
 pub extern "C" fn kshark_input_check(file_ptr: *mut c_char, _frmt: *mut *mut c_char) -> bool {
-    let file_str = from_str_ptr(file_ptr).unwrap();
-    let file_path = Path::new(file_str);
+    if let Ok(fstr) = from_str_ptr(file_ptr) {
+        if let Ok(mut file) = File::open(Path::new(fstr)) {
+            let ecode = {
+                let mut buf = [0u8; 4];
+                file.read_exact(&mut buf).unwrap_or_default();
+                0x0fffffff & u32::from_ne_bytes(buf)
+            };
 
-    if let Ok(mut fp) = File::open(file_path) {
-        let ecode = {
-            let mut buf = [0u8; 4];
-            fp.read_exact(&mut buf).unwrap_or_default();
-            0x0fffffff & u32::from_ne_bytes(buf)
-        };
-
-        return xentrace_parser::TRC_TRACE_CPU_CHANGE == ecode; // XXX Must use interface/xen
+            return xentrace_parser::TRC_TRACE_CPU_CHANGE == ecode; // XXX Must use interface/xen
+        }
     }
 
     false
