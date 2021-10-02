@@ -27,12 +27,12 @@ use ffi::kshark::{
 use libc::{c_char, c_int, c_void};
 use std::{alloc::System, convert::TryInto, fs::File, io::Read, path::Path, ptr::null_mut};
 use util::{
-    get_parser_instance,
+    get_record,
     pointer::{from_raw_ptr, from_raw_ptr_mut},
     string::{from_str_ptr, into_str_ptr},
     tsc_to_ns,
 };
-use xentrace_parser::{DomainType, Parser, Record};
+use xentrace_parser::{DomainType, Parser};
 
 // Use System allocator (malloc on Linux)
 #[global_allocator]
@@ -50,17 +50,7 @@ fn get_pid(_stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
 }
 
 fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
-    let record: &Record = {
-        let parser = get_parser_instance(stream_ptr);
-        let entry = from_raw_ptr(entry_ptr).unwrap();
-
-        let record = parser.get_records().get(entry.offset as usize);
-        if record.is_none() {
-            return into_str_ptr("unknown");
-        }
-
-        record.unwrap()
-    };
+    let record = get_record(stream_ptr, entry_ptr).unwrap();
 
     let dom: String = match record.get_domain().get_type() {
         DomainType::Idle => "idle".to_owned(),
@@ -71,12 +61,14 @@ fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     into_str_ptr(format!("{}/v{}", dom, record.get_domain().get_vcpu()))
 }
 
-fn get_event_name(_stream_ptr: *mut DataStream, _entry_ptr: *mut Entry) -> *mut c_char {
-    into_str_ptr("EVENT")
+fn get_event_name(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
+    let record = get_record(stream_ptr, entry_ptr).unwrap();
+    into_str_ptr(format!("{:#010X}", record.get_event().get_code()))
 }
 
-fn get_info(_stream_ptr: *mut DataStream, _entry_ptr: *mut Entry) -> *mut c_char {
-    into_str_ptr("INFO")
+fn get_info(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
+    let record = get_record(stream_ptr, entry_ptr).unwrap();
+    into_str_ptr(format!("{:?}", record.get_event().get_extra()))
 }
 
 fn dump_entry(_stream_ptr: *mut DataStream, _entry_ptr: *mut Entry) -> *mut c_char {
