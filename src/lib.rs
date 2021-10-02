@@ -53,14 +53,14 @@ fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     let record = get_record(stream_ptr, entry_ptr);
     let task_str = match record {
         Some(val) => {
-            let rdom = val.get_domain();
-            let rdom_str: String = match rdom.get_type() {
+            let dom = val.get_domain();
+            let dom_str: String = match dom.get_type() {
                 DomainType::Idle => "idle".to_owned(),
                 DomainType::Default => "default".to_owned(),
                 not_idle_or_def => format!("d{}", not_idle_or_def.to_id()),
             };
 
-            format!("{}/v{}", rdom_str, rdom.get_vcpu())
+            format!("{}/v{}", dom_str, dom.get_vcpu())
         }
         None => "unknown".to_owned(),
     };
