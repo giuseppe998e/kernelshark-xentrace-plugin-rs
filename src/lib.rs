@@ -24,14 +24,7 @@ use ffi::kshark::{
     context::Context, entry::Entry, interface::GenericStreamInterface, stream::DataStream,
 };
 use libc::{c_char, c_int, c_void};
-use std::{
-    alloc::{dealloc, Layout, System},
-    convert::TryInto,
-    fs::File,
-    io::Read,
-    path::Path,
-    ptr::null_mut,
-};
+use std::{alloc::System, convert::TryInto, fs::File, io::Read, path::Path, ptr::null_mut};
 use util::{
     pointer::{from_raw_ptr, from_raw_ptr_mut},
     string::{from_str_ptr, into_str_ptr},
