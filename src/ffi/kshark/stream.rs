@@ -72,8 +72,8 @@ impl DataStream {
         from_str_ptr(self.file).unwrap_or_default()
     }
 
-    pub fn get_interface_ref(&self) -> Option<&GenericStreamInterface> {
-        unsafe { self.interface.as_ref() }
+    pub fn get_interface(&self) -> &GenericStreamInterface {
+        unsafe { self.interface.as_ref().unwrap() }
     }
 }
 
