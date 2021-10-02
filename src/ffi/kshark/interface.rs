@@ -48,6 +48,11 @@ impl GenericStreamInterface {
     pub fn new_boxed() -> Box<Self> {
         Box::new(GenericStreamInterface::default())
     }
+
+    pub fn get_data_handler<T>(&self) -> Option<&T> {
+        let handle = self.handle as *const T;
+        unsafe { handle.as_ref() }
+    }
 }
 
 impl Default for GenericStreamInterface {
