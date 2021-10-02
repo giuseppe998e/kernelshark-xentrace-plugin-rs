@@ -94,14 +94,16 @@ pub extern "C" fn kshark_input_check(file_ptr: *const c_char, _frmt: *const *con
     let file_str = from_str_ptr(file_ptr).unwrap();
     let file_path = Path::new(file_str);
 
-    let hdr = {
-        let mut file_buf = File::open(file_path).unwrap();
-        let mut buf = [0u8; 4];
-        file_buf.read_exact(&mut buf).unwrap();
-        u32::from_ne_bytes(buf)
+    let ecode = match File::open(file_path) {
+        Ok(mut fp) => {
+            let mut buf = [0u8; 4];
+            fp.read_exact(&mut buf).unwrap_or_default();
+            u32::from_ne_bytes(buf) & 0x0fffffff
+        }
+        Err(_) => 0,
     };
 
-    xentrace_parser::TRC_TRACE_CPU_CHANGE == (hdr & 0x0fffffff) // XXX Must use interface/xen
+    xentrace_parser::TRC_TRACE_CPU_CHANGE == ecode // XXX Must use interface/xen
 }
 
 // KSHARK_INPUT_FORMAT @ libkshark-plugin.h
