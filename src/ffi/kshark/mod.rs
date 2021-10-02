@@ -4,21 +4,21 @@ pub(crate) mod interface;
 pub(crate) mod stream;
 
 use libc::{c_char, c_int, c_long, c_short, c_uint};
-use std::ptr::null;
+use std::ptr::null_mut;
 
 // Required structs from pthread.h
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct PthreadInternalList {
-    pub prev: *const PthreadInternalList,
-    pub next: *const PthreadInternalList,
+    pub prev: *mut PthreadInternalList,
+    pub next: *mut PthreadInternalList,
 }
 
 impl Default for PthreadInternalList {
     fn default() -> Self {
         Self {
-            prev: null::<PthreadInternalList>(),
-            next: null::<PthreadInternalList>(),
+            prev: null_mut::<PthreadInternalList>(),
+            next: null_mut::<PthreadInternalList>(),
         }
     }
 }

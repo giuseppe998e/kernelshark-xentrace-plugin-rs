@@ -1,13 +1,13 @@
 use super::stream::DataStream;
 use libc::{c_int, c_uchar, c_void};
-use std::ptr::null;
+use std::ptr::null_mut;
 
 /// Structure representing a kshark session.
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct Context /* kshark_context */ {
     /// Array of data stream descriptors.
-    pub stream: *const *const DataStream,
+    pub stream: *mut *mut DataStream,
     /// The number of data streams.
     pub n_streams: c_int,
     /// Parameters of the stream descriptor array.
@@ -17,13 +17,13 @@ pub struct Context /* kshark_context */ {
     /// have this bit unset in their \"visible\" fields.
     pub filter_mask: c_uchar,
     /// List of Data collections.
-    pub collections: *const c_void, // XXX NOT IMPL - kshark_entry_collection
+    pub collections: *mut c_void, // XXX NOT IMPL - kshark_entry_collection
     /// List of data readout interfaces.
-    pub inputs: *const c_void, // XXX NOT IMPL - kshark_dri_list
+    pub inputs: *mut c_void, // XXX NOT IMPL - kshark_dri_list
     /// The number of readout interfaces.
     pub n_inputs: c_int,
     /// List of Plugins.
-    pub plugins: *const c_void, // XXX NOT IMPL - kshark_plugin_list
+    pub plugins: *mut c_void, // XXX NOT IMPL - kshark_plugin_list
     /// The number of plugins.
     pub n_plugins: c_int,
 }
@@ -31,14 +31,14 @@ pub struct Context /* kshark_context */ {
 impl Default for Context {
     fn default() -> Self {
         Self {
-            stream: null::<*const DataStream>(),
+            stream: null_mut::<*mut DataStream>(),
             n_streams: Default::default(),
             stream_info: Default::default(),
             filter_mask: Default::default(),
-            collections: null::<c_void>(),
-            inputs: null::<c_void>(),
+            collections: null_mut::<c_void>(),
+            inputs: null_mut::<c_void>(),
             n_inputs: Default::default(),
-            plugins: null::<c_void>(),
+            plugins: null_mut::<c_void>(),
             n_plugins: Default::default(),
         }
     }

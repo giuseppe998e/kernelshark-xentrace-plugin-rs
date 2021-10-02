@@ -1,5 +1,5 @@
 use libc::{c_int, c_long, c_short, c_ushort};
-use std::ptr::null;
+use std::ptr::null_mut;
 
 /// Kernel Shark entry contains all information from one trace record needed
 /// in order to  visualize the time-series of trace records. The part of the
@@ -9,7 +9,7 @@ use std::ptr::null;
 #[derive(Debug, Copy, Clone)]
 pub struct Entry /* kshark_entry */ {
     /// Pointer to the next (in time) kshark_entry on the same CPU core.
-    pub next: *const Entry,
+    pub next: *mut Entry,
     /// A bit mask controlling the visibility of the entry. A value of OxFF
     /// would mean that the entry is visible everywhere. Use
     /// kshark_filter_masks to check the level of visibility/invisibility
@@ -41,7 +41,7 @@ impl Entry {
 impl Default for Entry {
     fn default() -> Self {
         Self {
-            next: null::<Entry>(),
+            next: null_mut::<Entry>(),
             visible: 0xFF, // Always visible
             stream_id: Default::default(),
             event_id: Default::default(),

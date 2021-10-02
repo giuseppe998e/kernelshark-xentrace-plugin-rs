@@ -23,8 +23,15 @@ mod util;
 use ffi::kshark::{
     context::Context, entry::Entry, interface::GenericStreamInterface, stream::DataStream,
 };
-use libc::{c_char, c_int};
-use std::{alloc::System, convert::TryInto, fs::File, io::Read, path::Path};
+use libc::{c_char, c_int, c_void};
+use std::{
+    alloc::{dealloc, Layout, System},
+    convert::TryInto,
+    fs::File,
+    io::Read,
+    path::Path,
+    ptr::null_mut,
+};
 use util::{
     pointer::{from_raw_ptr, from_raw_ptr_mut},
     string::{from_str_ptr, into_str_ptr},
@@ -38,36 +45,39 @@ static A: System = System;
 
 static KSHARK_SOURCE_TYPE: &str = "xentrace_bin";
 
-fn get_pid(_stream_ptr: *const DataStream, entry_ptr: *const Entry) -> c_int {
+fn get_pid(_stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
     let entry = from_raw_ptr(entry_ptr).unwrap();
     entry.pid
 }
 
-fn get_task(_stream_ptr: *const DataStream, _entry_ptr: *const Entry) -> *const c_char {
+fn get_task(_stream_ptr: *mut DataStream, _entry_ptr: *mut Entry) -> *mut c_char {
     into_str_ptr("TASK")
 }
 
-fn get_event_name(_stream_ptr: *const DataStream, _entry_ptr: *const Entry) -> *const c_char {
+fn get_event_name(_stream_ptr: *mut DataStream, _entry_ptr: *mut Entry) -> *mut c_char {
     into_str_ptr("EVENT")
 }
 
-fn get_info(_stream_ptr: *const DataStream, _entry_ptr: *const Entry) -> *const c_char {
+fn get_info(_stream_ptr: *mut DataStream, _entry_ptr: *mut Entry) -> *mut c_char {
     into_str_ptr("INFO")
 }
 
-fn dump_entry(_stream_ptr: *const DataStream, _entry_ptr: *const Entry) -> *const c_char {
+fn dump_entry(_stream_ptr: *mut DataStream, _entry_ptr: *mut Entry) -> *mut c_char {
     into_str_ptr("DUMP")
 }
 
 fn load_entries(
-    stream_ptr: *const DataStream,
-    _context_ptr: *const Context,
+    stream_ptr: *mut DataStream,
+    _context_ptr: *mut Context,
     rows_ptr: *mut *mut *mut Entry,
 ) -> isize {
     let stream = from_raw_ptr(stream_ptr).unwrap();
     let xtparser: &Parser = stream.get_interface().get_data_handler().unwrap();
 
-    let first_tsc = xtparser.get_records().get(0).map(|r| r.get_event().get_tsc());
+    let first_tsc = xtparser
+        .get_records()
+        .get(0)
+        .map(|r| r.get_event().get_tsc());
 
     let mut offset = 0;
     let rows: Vec<*mut Entry> = xtparser
@@ -112,7 +122,7 @@ fn load_entries(
 
 // KSHARK_INPUT_CHECK @ libkshark-plugin.h
 #[no_mangle]
-pub extern "C" fn kshark_input_check(file_ptr: *const c_char, _frmt: *const *const c_char) -> bool {
+pub extern "C" fn kshark_input_check(file_ptr: *mut c_char, _frmt: *mut *mut c_char) -> bool {
     let file_str = from_str_ptr(file_ptr).unwrap();
     let file_path = Path::new(file_str);
 
@@ -131,7 +141,7 @@ pub extern "C" fn kshark_input_check(file_ptr: *const c_char, _frmt: *const *con
 
 // KSHARK_INPUT_FORMAT @ libkshark-plugin.h
 #[no_mangle]
-pub extern "C" fn kshark_input_format() -> *const c_char {
+pub extern "C" fn kshark_input_format() -> *mut c_char {
     KSHARK_SOURCE_TYPE.as_ptr() as _
 }
 
