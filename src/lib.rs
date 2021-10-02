@@ -164,4 +164,11 @@ pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int
 
 // KSHARK_INPUT_DEINITIALIZER @ libkshark-plugin.h
 #[no_mangle]
-pub extern "C" fn kshark_input_deinitializer(_stream_ptr: *const DataStream) {}
+pub extern "C" fn kshark_input_deinitializer(stream_ptr: *mut DataStream) {
+    let stream = from_raw_ptr(stream_ptr).unwrap();
+    let interface = stream.get_mut_interface();
+    let xtparser: Box<Parser> = unsafe { Box::from_raw(interface.handle as _) };
+
+    drop(xtparser);
+    interface.handle = null_mut::<c_void>();
+}
