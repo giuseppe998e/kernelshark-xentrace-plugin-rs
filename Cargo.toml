@@ -6,7 +6,7 @@ authors = ["Giuseppe Eletto <peppe.eletto@gmail.com>"]
 readme = "README.md"
 license = "LGPL-2.1-or-later"
 keywords = ["xen", "xentrace", "kenelshark", "ks", "trace", "plugin", "ffi"]
-repository = ""
+repository = "https://github.com/giuseppe998e/kernelshark-xentrace-plugin-rs/"
 edition = "2018"
 
 [dependencies]
