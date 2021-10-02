@@ -24,7 +24,7 @@ use ffi::kshark::{
     context::Context, entry::Entry, interface::GenericStreamInterface, stream::DataStream,
 };
 use libc::{c_char, c_int};
-use std::{alloc::System, fs::File, io::Read, path::Path};
+use std::{alloc::System, convert::TryInto, fs::File, io::Read, path::Path};
 use util::{
     pointer::{from_raw_ptr, from_raw_ptr_mut},
     string::{from_str_ptr, into_str_ptr},
@@ -85,7 +85,7 @@ fn load_entries(
         *rows_ptr = Box::into_raw(rows.into_boxed_slice()) as _;
     }
 
-    TEST_EVENTS_NUM as isize
+    TEST_EVENTS_NUM.try_into().unwrap()
 }
 
 // KSHARK_INPUT_CHECK @ libkshark-plugin.h
@@ -127,8 +127,8 @@ pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int
     let mut stream = from_raw_ptr_mut(stream_ptr).unwrap();
     stream.interface = Box::into_raw(interface);
 
-    stream.n_cpus = TEST_CPUS_NUM as i32;
-    stream.n_events = TEST_EVENTS_NUM as i32;
+    stream.n_cpus = TEST_CPUS_NUM.try_into().unwrap();
+    stream.n_events = TEST_EVENTS_NUM.try_into().unwrap();
     stream.idle_pid = 0;
 
     stream.add_task_id(10);
