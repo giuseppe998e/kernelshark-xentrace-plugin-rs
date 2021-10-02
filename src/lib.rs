@@ -155,9 +155,9 @@ pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int
         let mut interface = GenericStreamInterface::new_boxed();
 
         interface.get_pid = get_pid as _;
+        interface.get_task = get_task as _;
         interface.get_event_name = get_event_name as _;
         interface.get_info = get_info as _;
-        interface.get_task = get_task as _;
         interface.dump_entry = dump_entry as _;
         interface.load_entries = load_entries as _;
         interface.handle = Box::into_raw(parser) as _;
