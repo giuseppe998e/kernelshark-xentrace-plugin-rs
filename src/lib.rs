@@ -91,18 +91,19 @@ fn load_entries(
                 .try_into()
                 .unwrap();
 
-            let domtype = r.get_domain().get_type();
-            if domtype != DomainType::Idle {
-                let task_id = if domtype == DomainType::Default {
-                    DomainType::Default.to_id()
-                } else {
-                    domtype.to_id() + 1
+            entry.pid = match r.get_domain().get_type() {
+                DomainType::Idle => 0,
+                not_idle => {
+                    let task_id = match not_idle {
+                        DomainType::Default => not_idle.to_id(),
+                        not_def => not_def.to_id() + 1,
+                    }
+                    .into();
+    
+                    stream.add_task_id(task_id);
+                    task_id
                 }
-                .into();
-
-                stream.add_task_id(task_id);
-                entry.pid = task_id;
-            }
+            };
 
             entry.offset = offset;
             offset += 1;
