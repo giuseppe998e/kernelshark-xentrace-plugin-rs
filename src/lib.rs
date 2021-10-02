@@ -65,15 +65,15 @@ fn load_entries(
     rows_ptr: *mut *mut *mut Entry,
 ) -> isize {
     let stream = from_raw_ptr(stream_ptr).unwrap();
-    let xtparser: &Parser = stream.get_interface().get_data_handler().unwrap();
+    let parser: &Parser = stream.get_interface().get_data_handler().unwrap();
 
-    let first_tsc = xtparser
+    let first_tsc = parser
         .get_records()
         .get(0)
         .map(|r| r.get_event().get_tsc());
 
     let mut offset = 0;
-    let rows: Vec<*mut Entry> = xtparser
+    let rows: Vec<*mut Entry> = parser
         .get_records()
         .iter()
         .map(|r| {
@@ -110,7 +110,7 @@ fn load_entries(
         *rows_ptr = Box::into_raw(rows.into_boxed_slice()) as _;
     }
 
-    xtparser.get_records().len().try_into().unwrap()
+    parser.get_records().len().try_into().unwrap()
 }
 
 // KSHARK_INPUT_CHECK @ libkshark-plugin.h
@@ -142,11 +142,11 @@ pub extern "C" fn kshark_input_format() -> *mut c_char {
 #[no_mangle]
 pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int {
     let mut stream = from_raw_ptr_mut(stream_ptr).unwrap();
-    let xtparser = Box::new(Parser::new(stream.get_file_path()).unwrap());
+    let parser = Box::new(Parser::new(stream.get_file_path()).unwrap());
 
     stream.idle_pid = 0;
-    stream.n_cpus = xtparser.cpu_count().try_into().unwrap();
-    stream.n_events = xtparser.get_records().len().try_into().unwrap();
+    stream.n_cpus = parser.cpu_count().try_into().unwrap();
+    stream.n_events = parser.get_records().len().try_into().unwrap();
 
     stream.interface = {
         let mut interface = GenericStreamInterface::new_boxed();
@@ -157,7 +157,7 @@ pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int
         interface.get_task = get_task as _;
         interface.dump_entry = dump_entry as _;
         interface.load_entries = load_entries as _;
-        interface.handle = Box::into_raw(xtparser) as _;
+        interface.handle = Box::into_raw(parser) as _;
 
         Box::into_raw(interface)
     };
@@ -170,8 +170,8 @@ pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int
 pub extern "C" fn kshark_input_deinitializer(stream_ptr: *mut DataStream) {
     let stream = from_raw_ptr(stream_ptr).unwrap();
     let interface = stream.get_mut_interface();
-    let xtparser: Box<Parser> = unsafe { Box::from_raw(interface.handle as _) };
+    let parser: Box<Parser> = unsafe { Box::from_raw(interface.handle as _) };
 
-    drop(xtparser);
+    drop(parser);
     interface.handle = null_mut::<c_void>();
 }
