@@ -27,11 +27,12 @@ use ffi::kshark::{
 use libc::{c_char, c_int, c_void};
 use std::{alloc::System, convert::TryInto, fs::File, io::Read, path::Path, ptr::null_mut};
 use util::{
+    get_parser_instance,
     pointer::{from_raw_ptr, from_raw_ptr_mut},
     string::{from_str_ptr, into_str_ptr},
     tsc_to_ns,
 };
-use xentrace_parser::{DomainType, Parser};
+use xentrace_parser::{DomainType, Parser, Record};
 
 // Use System allocator (malloc on Linux)
 #[global_allocator]
@@ -48,8 +49,26 @@ fn get_pid(_stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
     }
 }
 
-fn get_task(_stream_ptr: *mut DataStream, _entry_ptr: *mut Entry) -> *mut c_char {
-    into_str_ptr("TASK")
+fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
+    let record: &Record = {
+        let parser = get_parser_instance(stream_ptr);
+        let entry = from_raw_ptr(entry_ptr).unwrap();
+
+        let record = parser.get_records().get(entry.offset as usize);
+        if record.is_none() {
+            return into_str_ptr("unknown");
+        }
+
+        record.unwrap()
+    };
+
+    let dom: String = match record.get_domain().get_type() {
+        DomainType::Idle => "idle".to_owned(),
+        DomainType::Default => "default".to_owned(),
+        not_idle_or_def => format!("d{}", not_idle_or_def.to_id()),
+    };
+
+    into_str_ptr(format!("{}/v{}", dom, record.get_domain().get_vcpu()))
 }
 
 fn get_event_name(_stream_ptr: *mut DataStream, _entry_ptr: *mut Entry) -> *mut c_char {
@@ -92,10 +111,9 @@ fn load_entries(
                 DomainType::Idle => 0,
                 not_idle => {
                     let task_id = match not_idle {
-                        DomainType::Default => not_idle.to_id(),
-                        not_def => not_def.to_id() + 1,
-                    }
-                    .into();
+                        DomainType::Default => not_idle.to_id() as i32,
+                        _ => r.get_domain().as_u32() as i32 + 1,
+                    };
 
                     stream.add_task_id(task_id);
                     task_id
