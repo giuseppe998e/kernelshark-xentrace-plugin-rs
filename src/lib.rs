@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
  * USA
  */
-mod ffi;
+mod cbind;
 mod stringify;
 mod util;
 
-use ffi::kshark::{
+use cbind::kshark::{
     context::Context, entry::Entry, interface::GenericStreamInterface, stream::DataStream,
     KS_EMPTY_BIN, KS_PLUGIN_UNTOUCHED_MASK,
 };

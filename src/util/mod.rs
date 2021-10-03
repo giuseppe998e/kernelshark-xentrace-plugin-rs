@@ -2,7 +2,7 @@ pub(crate) mod pointer;
 pub(crate) mod string;
 
 use self::pointer::from_raw_ptr;
-use crate::ffi::kshark::{entry::Entry, stream::DataStream};
+use crate::cbind::kshark::{entry::Entry, stream::DataStream};
 use libc::{c_long, c_ulong};
 use std::convert::TryInto;
 use xentrace_parser::{Parser, Record};
