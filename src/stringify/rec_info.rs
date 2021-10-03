@@ -1,5 +1,5 @@
-use xentrace_parser::Record;
+use xentrace_parser::Event;
 
-pub(crate) fn get_record_info_str(record: &Record) -> String {
-    format!("{:?}", record.get_event().get_extra())
+pub(crate) fn get_record_info_str(event: &Event) -> String {
+    format!("{:?}", event.get_extra())
 }
