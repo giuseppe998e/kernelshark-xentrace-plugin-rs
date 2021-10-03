@@ -103,7 +103,6 @@ fn load_entries(
 ) -> isize {
     let stream = from_raw_ptr(stream_ptr).unwrap();
     let parser: &Parser = stream.get_interface().get_data_handler().unwrap();
-    let num_recs = parser.get_records().len();
 
     stream.add_task_id(DomainType::Default.to_id().into()); /* "pidmap" is probably impossible to reach
                                                             this number of entries (dom:vcpu pairs) */
@@ -115,7 +114,7 @@ fn load_entries(
         parser
             .get_records()
             .iter()
-            .zip(0..num_recs)
+            .zip(0..)
             .map(|(r, i)| {
                 let mut entry = Entry::new_boxed();
 
@@ -123,7 +122,7 @@ fn load_entries(
                 entry.cpu = r.get_cpu().try_into().unwrap_or(i16::MAX);
                 entry.ts = tsc_to_ns(r.get_event().get_tsc(), first_tsc, None);
                 entry.event_id = r.get_event().get_code().try_into().unwrap_or(i16::MAX);
-                entry.offset = i.try_into().unwrap_or(i64::MAX);
+                entry.offset = i;
 
                 let dom = r.get_domain();
                 entry.pid = match dom.get_type() {
@@ -147,7 +146,7 @@ fn load_entries(
         *rows_ptr = Box::into_raw(rows.into_boxed_slice()) as _;
     }
 
-    num_recs.try_into().unwrap_or(isize::MAX)
+    parser.get_records().len().try_into().unwrap_or(isize::MAX)
 }
 
 // KSHARK_INPUT_CHECK @ libkshark-plugin.h
