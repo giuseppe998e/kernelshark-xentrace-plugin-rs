@@ -122,9 +122,7 @@ fn load_entries(
                 entry.stream_id = stream.stream_id;
                 entry.cpu = r.get_cpu().try_into().unwrap();
                 entry.ts = tsc_to_ns(r.get_event().get_tsc(), first_tsc, None);
-                entry.event_id = (r.get_event().get_code() % (i16::MAX as u32))
-                    .try_into()
-                    .unwrap();
+                entry.event_id = (r.get_event().get_code() % (i16::MAX as u32)) as i16;
 
                 let dom = r.get_domain();
                 entry.pid = match dom.get_type() {
@@ -151,7 +149,7 @@ fn load_entries(
         *rows_ptr = Box::into_raw(rows.into_boxed_slice()) as _;
     }
 
-    parser.get_records().len().try_into().unwrap()
+    parser.get_records().len().try_into().unwrap_or(isize::MAX)
 }
 
 // KSHARK_INPUT_CHECK @ libkshark-plugin.h
@@ -161,7 +159,7 @@ pub extern "C" fn kshark_input_check(file_ptr: *mut c_char, _frmt: *mut *mut c_c
         if let Ok(mut file) = File::open(Path::new(fstr)) {
             let ecode = {
                 let mut buf = [0u8; 4];
-                file.read_exact(&mut buf).unwrap_or_default();
+                let _ = file.read_exact(&mut buf);
                 0x0fffffff & u32::from_ne_bytes(buf)
             };
 
@@ -185,8 +183,8 @@ pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int
     let parser = Box::new(Parser::new(stream.get_file_path()).unwrap());
 
     stream.idle_pid = 0;
-    stream.n_cpus = parser.cpu_count().try_into().unwrap();
-    stream.n_events = parser.get_records().len().try_into().unwrap();
+    stream.n_cpus = parser.cpu_count().into();
+    stream.n_events = parser.get_records().len().try_into().unwrap_or(i32::MAX);
 
     stream.interface = {
         let mut interface = GenericStreamInterface::new_boxed();
