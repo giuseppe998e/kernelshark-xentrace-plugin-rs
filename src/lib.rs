@@ -86,7 +86,10 @@ fn get_info(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
 fn dump_entry(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     let record = get_record(stream_ptr, entry_ptr);
     let (ename_str, einfo_str) = match record {
-        Some(r) => (get_record_name_str(&r.get_event()), get_record_info_str(&r.get_event())),
+        Some(r) => (
+            get_record_name_str(&r.get_event()),
+            get_record_info_str(&r.get_event()),
+        ),
         None => ("unknown".to_owned(), "unknown".to_owned()),
     };
 
