@@ -26,7 +26,10 @@ use ffi::kshark::{
     KS_EMPTY_BIN, KS_PLUGIN_UNTOUCHED_MASK,
 };
 use libc::{c_char, c_int, c_void};
-use std::{alloc::System, convert::TryInto, fs::File, io::Read, path::Path, ptr::null_mut};
+use std::{
+    alloc::System, collections::HashMap, convert::TryInto, fs::File, io::Read, path::Path,
+    ptr::null_mut,
+};
 use stringify::{get_record_info_str, get_record_name_str, get_record_task_str};
 use util::{
     get_record,
@@ -101,41 +104,48 @@ fn load_entries(
     let stream = from_raw_ptr(stream_ptr).unwrap();
     let parser: &Parser = stream.get_interface().get_data_handler().unwrap();
 
-    let first_tsc = parser.get_records().get(0).map(|r| r.get_event().get_tsc());
+    stream.add_task_id(DomainType::Default.to_id().into()); /* "pidmap" is probably impossible to reach
+                                                            this number of entries (dom:vcpu pairs) */
 
-    let mut offset = 0;
-    let rows: Vec<*mut Entry> = parser
-        .get_records()
-        .iter()
-        .map(|r| {
-            let mut entry = Entry::new_boxed();
+    let rows: Vec<*mut Entry> = {
+        let mut pidmap = HashMap::<u32, i32>::new();
+        let mut offset = 0;
 
-            entry.stream_id = stream.stream_id.try_into().unwrap();
-            entry.cpu = r.get_cpu().try_into().unwrap();
-            entry.ts = tsc_to_ns(r.get_event().get_tsc(), first_tsc, None);
-            entry.event_id = (r.get_event().get_code() % (i16::MAX as u32))
-                .try_into()
-                .unwrap();
+        let first_tsc = parser.get_records().get(0).map(|r| r.get_event().get_tsc());
 
-            entry.pid = match r.get_domain().get_type() {
-                DomainType::Idle => 0,
-                not_idle => {
-                    let task_id = match not_idle {
-                        DomainType::Default => not_idle.to_id() as i32,
-                        _ => r.get_domain().as_u32() as i32 + 1,
-                    };
+        parser
+            .get_records()
+            .iter()
+            .map(|r| {
+                let mut entry = Entry::new_boxed();
 
-                    stream.add_task_id(task_id);
-                    task_id
-                }
-            };
+                entry.stream_id = stream.stream_id;
+                entry.cpu = r.get_cpu().try_into().unwrap();
+                entry.ts = tsc_to_ns(r.get_event().get_tsc(), first_tsc, None);
+                entry.event_id = (r.get_event().get_code() % (i16::MAX as u32))
+                    .try_into()
+                    .unwrap();
 
-            entry.offset = offset;
-            offset += 1;
+                let dom = r.get_domain();
+                entry.pid = match dom.get_type() {
+                    DomainType::Idle => 0,
+                    DomainType::Default => DomainType::Default.to_id().into(),
+                    _ => {
+                        let task_id = pidmap.len() as i32 + 1;
+                        *pidmap.entry(dom.as_u32()).or_insert_with(|| {
+                            stream.add_task_id(task_id);
+                            task_id
+                        })
+                    }
+                };
 
-            Box::into_raw(entry)
-        })
-        .collect();
+                entry.offset = offset;
+                offset += 1;
+
+                Box::into_raw(entry)
+            })
+            .collect()
+    };
 
     unsafe {
         *rows_ptr = Box::into_raw(rows.into_boxed_slice()) as _;
