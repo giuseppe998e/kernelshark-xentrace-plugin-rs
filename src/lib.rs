@@ -120,16 +120,16 @@ fn load_entries(
                 let mut entry = Entry::new_boxed();
 
                 entry.stream_id = stream.stream_id;
-                entry.cpu = r.get_cpu().try_into().unwrap();
+                entry.cpu = r.get_cpu().try_into().unwrap_or(i16::MAX);
                 entry.ts = tsc_to_ns(r.get_event().get_tsc(), first_tsc, None);
-                entry.event_id = (r.get_event().get_code() % (i16::MAX as u32)) as i16;
+                entry.event_id = r.get_event().get_code().try_into().unwrap_or(i16::MAX);
 
                 let dom = r.get_domain();
                 entry.pid = match dom.get_type() {
                     DomainType::Idle => 0,
                     DomainType::Default => DomainType::Default.to_id().into(),
                     _ => {
-                        let task_id = pidmap.len() as i32 + 1;
+                        let task_id: i32 = (pidmap.len() + 1).try_into().unwrap_or(i32::MAX);
                         *pidmap.entry(dom.as_u32()).or_insert_with(|| {
                             stream.add_task_id(task_id);
                             task_id
