@@ -25,7 +25,7 @@ use cbind::kshark::{
     context::Context, entry::Entry, interface::GenericStreamInterface, stream::DataStream,
     KS_EMPTY_BIN, KS_PLUGIN_UNTOUCHED_MASK,
 };
-use libc::{c_char, c_int, c_void};
+use libc::{c_char, c_int, c_short, c_uint, c_void, ssize_t};
 use std::{
     alloc::System, collections::HashMap, convert::TryInto, fs::File, io::Read, path::Path,
     ptr::null_mut,
@@ -100,7 +100,7 @@ fn load_entries(
     stream_ptr: *mut DataStream,
     _context_ptr: *mut Context,
     rows_ptr: *mut *mut *mut Entry,
-) -> isize {
+) -> ssize_t {
     let stream = from_raw_ptr(stream_ptr).unwrap();
     let parser: &Parser = stream.get_interface().get_data_handler().unwrap();
 
@@ -108,7 +108,7 @@ fn load_entries(
                                                             this number of entries (dom:vcpu pairs) */
 
     let rows: Vec<*mut Entry> = {
-        let mut pidmap = HashMap::<u32, i32>::new();
+        let mut pidmap = HashMap::<c_uint, c_int>::new();
         let first_tsc = parser.get_records().get(0).map(|r| r.get_event().get_tsc());
 
         parser
@@ -119,9 +119,9 @@ fn load_entries(
                 let mut entry = Entry::new_boxed();
 
                 entry.stream_id = stream.stream_id;
-                entry.cpu = r.get_cpu().try_into().unwrap_or(i16::MAX);
+                entry.cpu = r.get_cpu().try_into().unwrap_or(c_short::MAX);
                 entry.ts = tsc_to_ns(r.get_event().get_tsc(), first_tsc, None);
-                entry.event_id = r.get_event().get_code().try_into().unwrap_or(i16::MAX);
+                entry.event_id = r.get_event().get_code().try_into().unwrap_or(c_short::MAX);
                 entry.offset = i;
 
                 let dom = r.get_domain();
@@ -129,7 +129,7 @@ fn load_entries(
                     DomainType::Idle => 0,
                     DomainType::Default => DomainType::Default.to_id().into(),
                     _ => {
-                        let task_id = (pidmap.len() + 1).try_into().unwrap_or(i32::MAX);
+                        let task_id = (pidmap.len() + 1).try_into().unwrap_or(c_int::MAX);
                         *pidmap.entry(dom.as_u32()).or_insert_with(|| {
                             stream.add_task_id(task_id);
                             task_id
@@ -146,7 +146,11 @@ fn load_entries(
         *rows_ptr = Box::into_raw(rows.into_boxed_slice()) as _;
     }
 
-    parser.get_records().len().try_into().unwrap_or(isize::MAX)
+    parser
+        .get_records()
+        .len()
+        .try_into()
+        .unwrap_or(ssize_t::MAX)
 }
 
 // KSHARK_INPUT_CHECK @ libkshark-plugin.h
@@ -157,7 +161,7 @@ pub extern "C" fn kshark_input_check(file_ptr: *mut c_char, _frmt: *mut *mut c_c
             let ecode = {
                 let mut buf = [0u8; 4];
                 let _ = file.read_exact(&mut buf);
-                0x0fffffff & u32::from_ne_bytes(buf)
+                0x0fffffff & c_uint::from_ne_bytes(buf)
             };
 
             return xentrace_parser::TRC_TRACE_CPU_CHANGE == ecode; // XXX Must use interface/xen
@@ -181,7 +185,7 @@ pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int
 
     stream.idle_pid = 0;
     stream.n_cpus = parser.cpu_count().into();
-    stream.n_events = parser.get_records().len().try_into().unwrap_or(i32::MAX);
+    stream.n_events = parser.get_records().len().try_into().unwrap_or(c_int::MAX);
 
     stream.interface = {
         let mut interface = GenericStreamInterface::new_boxed();
