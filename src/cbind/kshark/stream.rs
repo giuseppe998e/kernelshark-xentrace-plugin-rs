@@ -5,7 +5,7 @@ use std::ptr::null_mut;
 
 extern "C" {
     fn kshark_hash_id_add(
-        hash: *mut c_void, /* XXX NOT IMPL - kshark_hash_id */
+        hash: *mut c_void, // XXX NOT IMPL - kshark_hash_id
         id: c_int,
     ) -> c_int;
 }
