@@ -1,6 +1,6 @@
-use super::interface::GenericStreamInterface;
+use super::{interface::GenericStreamInterface, KS_DATA_FORMAT_SIZE};
 use crate::util::string::from_str_ptr;
-use libc::{c_char, c_int, c_long, c_short, c_uint, c_ushort, c_void, size_t};
+use libc::{c_char, c_int, c_long, c_short, c_uint, c_void, size_t};
 use std::ptr::null_mut;
 
 extern "C" {
@@ -15,7 +15,7 @@ extern "C" {
 #[derive(Copy, Clone)]
 pub struct DataStream /* kshark_data_stream */ {
     /// Data stream identifier.
-    pub stream_id: c_ushort,
+    pub stream_id: c_short,
     /// The number of CPUs presented in this data stream.
     pub n_cpus: c_int,
     /// The number of distinct event types presented in this data stream.
@@ -42,8 +42,11 @@ pub struct DataStream /* kshark_data_stream */ {
     pub show_cpu_filter: *mut c_void, // XXX NOT IMPL - kshark_hash_id
     /// Hash of CPUs to not display.
     pub hide_cpu_filter: *mut c_void, // XXX NOT IMPL - kshark_hash_id
+    /// Flag showing if some entries are filtered out
+    /// (marked as invisible).
+    pub filter_is_applied: bool,
     /// The type of the data.
-    pub data_format: [c_char; 15usize],
+    pub data_format: [c_char; KS_DATA_FORMAT_SIZE],
     /// List of Plugin interfaces.
     pub plugins: *mut c_void, // XXX NOT IMPL - kshark_dpi_list
     /// The number of plugins registered for this stream.
@@ -98,6 +101,7 @@ impl Default for DataStream {
             hide_event_filter: null_mut::<c_void>(),
             show_cpu_filter: null_mut::<c_void>(),
             hide_cpu_filter: null_mut::<c_void>(),
+            filter_is_applied: false,
             data_format: Default::default(),
             plugins: null_mut::<c_void>(),
             n_plugins: Default::default(),

@@ -1,4 +1,5 @@
-use libc::{c_uint, c_void};
+use super::KS_GENERIC_DATA_INTERFACE;
+use libc::{c_int, c_void};
 use std::ptr::null_mut;
 
 /// Structure representing the interface of methods used to
@@ -7,7 +8,7 @@ use std::ptr::null_mut;
 #[derive(Debug, Copy, Clone)]
 pub struct GenericStreamInterface /* kshark_generic_stream_interface */ {
     /// Interface version identifier.
-    pub type_: c_uint,
+    pub type_: c_int,
     /// Method used to retrieve the Process Id of the entry.
     pub get_pid: *mut c_void,
     /// Method used to retrieve the Event Id of the entry.
@@ -58,7 +59,7 @@ impl GenericStreamInterface {
 impl Default for GenericStreamInterface {
     fn default() -> Self {
         Self {
-            type_: 1, // KS_GENERIC_DATA_INTERFACE
+            type_: KS_GENERIC_DATA_INTERFACE,
             get_pid: null_mut::<c_void>(),
             get_event_id: null_mut::<c_void>(),
             get_event_name: null_mut::<c_void>(),
