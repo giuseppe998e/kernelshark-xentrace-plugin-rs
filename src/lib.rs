@@ -103,42 +103,40 @@ fn load_entries(
 ) -> isize {
     let stream = from_raw_ptr(stream_ptr).unwrap();
     let parser: &Parser = stream.get_interface().get_data_handler().unwrap();
+    let num_recs = parser.get_records().len();
 
     stream.add_task_id(DomainType::Default.to_id().into()); /* "pidmap" is probably impossible to reach
                                                             this number of entries (dom:vcpu pairs) */
 
     let rows: Vec<*mut Entry> = {
         let mut pidmap = HashMap::<u32, i32>::new();
-        let mut offset = 0;
-
         let first_tsc = parser.get_records().get(0).map(|r| r.get_event().get_tsc());
 
         parser
             .get_records()
             .iter()
-            .map(|r| {
+            .zip(0..num_recs)
+            .map(|(r, i)| {
                 let mut entry = Entry::new_boxed();
 
                 entry.stream_id = stream.stream_id;
                 entry.cpu = r.get_cpu().try_into().unwrap_or(i16::MAX);
                 entry.ts = tsc_to_ns(r.get_event().get_tsc(), first_tsc, None);
                 entry.event_id = r.get_event().get_code().try_into().unwrap_or(i16::MAX);
+                entry.offset = i.try_into().unwrap_or(i64::MAX);
 
                 let dom = r.get_domain();
                 entry.pid = match dom.get_type() {
                     DomainType::Idle => 0,
                     DomainType::Default => DomainType::Default.to_id().into(),
                     _ => {
-                        let task_id: i32 = (pidmap.len() + 1).try_into().unwrap_or(i32::MAX);
+                        let task_id = (pidmap.len() + 1).try_into().unwrap_or(i32::MAX);
                         *pidmap.entry(dom.as_u32()).or_insert_with(|| {
                             stream.add_task_id(task_id);
                             task_id
                         })
                     }
                 };
-
-                entry.offset = offset;
-                offset += 1;
 
                 Box::into_raw(entry)
             })
@@ -149,7 +147,7 @@ fn load_entries(
         *rows_ptr = Box::into_raw(rows.into_boxed_slice()) as _;
     }
 
-    parser.get_records().len().try_into().unwrap_or(isize::MAX)
+    num_recs.try_into().unwrap_or(isize::MAX)
 }
 
 // KSHARK_INPUT_CHECK @ libkshark-plugin.h
