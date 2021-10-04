@@ -39,7 +39,7 @@ use util::{
 };
 use xentrace_parser::{DomainType, Parser};
 
-// Use System allocator (malloc on Linux)
+// Use System allocator
 #[global_allocator]
 static A: System = System;
 
@@ -107,8 +107,8 @@ fn load_entries(
     let stream = from_raw_ptr(stream_ptr).unwrap();
     let parser: &Parser = stream.get_interface().get_data_handler().unwrap();
 
-    stream.add_task_id(DomainType::Default.to_id().into()); /* "pidmap" is probably impossible to reach
-                                                            this number of entries (dom:vcpu pairs) */
+    stream.add_task_id(DomainType::Default.into_id().into()); /* "pidmap" is probably impossible to reach
+                                                              this number of entries (dom:vcpu pairs) */
 
     let rows: Vec<*mut Entry> = {
         let mut pidmap = HashMap::<c_uint, c_int>::new();
@@ -124,16 +124,21 @@ fn load_entries(
                 entry.stream_id = stream.stream_id;
                 entry.cpu = r.get_cpu().try_into().unwrap_or(c_short::MAX);
                 entry.ts = tsc_to_ns(r.get_event().get_tsc(), first_tsc, None);
-                entry.event_id = r.get_event().get_code().try_into().unwrap_or(c_short::MAX);
+                entry.event_id = r
+                    .get_event()
+                    .get_code()
+                    .into_u32()
+                    .try_into()
+                    .unwrap_or(c_short::MAX);
                 entry.offset = i;
 
                 let dom = r.get_domain();
                 entry.pid = match dom.get_type() {
                     DomainType::Idle => 0,
-                    DomainType::Default => DomainType::Default.to_id().into(),
+                    DomainType::Default => DomainType::Default.into_id().into(),
                     _ => {
                         let task_id = (pidmap.len() + 1).try_into().unwrap_or(c_int::MAX);
-                        *pidmap.entry(dom.as_u32()).or_insert_with(|| {
+                        *pidmap.entry(dom.into_u32()).or_insert_with(|| {
                             stream.add_task_id(task_id);
                             task_id
                         })
@@ -164,7 +169,7 @@ pub extern "C" fn kshark_input_check(file_ptr: *mut c_char, _frmt: *mut *mut c_c
             let ecode = {
                 let mut buf = [0u8; 4];
                 let _ = file.read_exact(&mut buf);
-                0x0fffffff & c_uint::from_ne_bytes(buf)
+                0x0FFFFFFF & c_uint::from_ne_bytes(buf)
             };
 
             return xentrace_parser::TRC_TRACE_CPU_CHANGE == ecode; // XXX Must use interface/xen

@@ -10,7 +10,7 @@ pub(crate) fn get_record_task_str(domain: &Domain) -> String {
     if domain.get_type() != DomainType::Default {
         let dom_str: String = match domain.get_type() {
             DomainType::Idle => "idle".to_owned(),
-            not_idle => format!("d{}", not_idle.to_id()),
+            not_idle => format!("d{}", not_idle.into_id()),
         };
 
         format!("{}/v{}", dom_str, domain.get_vcpu())
