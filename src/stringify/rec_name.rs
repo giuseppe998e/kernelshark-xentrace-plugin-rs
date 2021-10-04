@@ -2,57 +2,58 @@ use crate::cbind::xen::*;
 use xentrace_parser::Event;
 
 fn get_trc_gen_name_str(event: &Event) -> Option<String> {
-    None
+    Some("TRC_GEN".to_owned())
 }
 
 fn get_trc_sched_name_str(event: &Event) -> Option<String> {
-    None
+    Some("TRC_SCHED".to_owned())
 }
 
 fn get_trc_dom0op_name_str(event: &Event) -> Option<String> {
-    None
+    Some("TRC_DOM0OP".to_owned())
 }
 
 fn get_trc_hvm_name_str(event: &Event) -> Option<String> {
-    None
+    Some("TRC_HVM".to_owned())
 }
 
 fn get_trc_mem_name_str(event: &Event) -> Option<String> {
-    None
+    Some("TRC_MEM".to_owned())
 }
 
 fn get_trc_pv_name_str(event: &Event) -> Option<String> {
-    None
+    Some("TRC_PV".to_owned())
 }
 
 fn get_trc_shadow_name_str(event: &Event) -> Option<String> {
-    None
+    Some("TRC_SHADOW".to_owned())
 }
 
 fn get_trc_hw_name_str(event: &Event) -> Option<String> {
-    None
+    Some("TRC_HW".to_owned())
 }
 
 fn get_trc_guest_name_str(event: &Event) -> Option<String> {
-    None
+    Some("TRC_GUEST".to_owned())
 }
 
 pub(crate) fn get_record_name_str(event: &Event) -> String {
-    let ecode = match event.get_code() & TRC_ALL {
-        v if v & TRC_GEN == v => get_trc_gen_name_str(&event),
-        v if v & TRC_SCHED == v => get_trc_sched_name_str(&event),
-        v if v & TRC_DOM0OP == v => get_trc_dom0op_name_str(&event),
-        v if v & TRC_HVM == v => get_trc_hvm_name_str(&event),
-        v if v & TRC_MEM == v => get_trc_mem_name_str(&event),
-        v if v & TRC_PV == v => get_trc_pv_name_str(&event),
-        v if v & TRC_SHADOW == v => get_trc_shadow_name_str(&event),
-        v if v & TRC_HW == v => get_trc_hw_name_str(&event),
-        v if v & TRC_GUEST == v => get_trc_guest_name_str(&event),
+    let ecode = event.get_code();
+    let result_str = match ecode.get_main() {
+        TRC_GEN => get_trc_gen_name_str(&event),
+        TRC_SCHED => get_trc_sched_name_str(&event),
+        TRC_DOM0OP => get_trc_dom0op_name_str(&event),
+        TRC_HVM => get_trc_hvm_name_str(&event),
+        TRC_MEM => get_trc_mem_name_str(&event),
+        TRC_PV => get_trc_pv_name_str(&event),
+        TRC_SHADOW => get_trc_shadow_name_str(&event),
+        TRC_HW => get_trc_hw_name_str(&event),
+        TRC_GUEST => get_trc_guest_name_str(&event),
         _ => None,
     };
 
-    match ecode {
+    match result_str {
         Some(v) => v,
-        None => format!("unknown ({:#010X})", event.get_code()),
+        None => format!("unknown ({:#010X})", event.get_code().into_u32()),
     }
 }
