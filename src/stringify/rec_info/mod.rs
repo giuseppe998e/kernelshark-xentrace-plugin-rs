@@ -1,39 +1,39 @@
 use crate::cbind::xen::*;
 use xentrace_parser::Event;
 
-fn get_trc_gen_info_str(event: &Event) -> Option<String> {
+fn get_trc_gen_info_str(_event: &Event) -> Option<String> {
     None
 }
 
-fn get_trc_sched_info_str(event: &Event) -> Option<String> {
+fn get_trc_sched_info_str(_event: &Event) -> Option<String> {
     None
 }
 
-fn get_trc_dom0op_info_str(event: &Event) -> Option<String> {
+fn get_trc_dom0op_info_str(_event: &Event) -> Option<String> {
     None
 }
 
-fn get_trc_hvm_info_str(event: &Event) -> Option<String> {
+fn get_trc_hvm_info_str(_event: &Event) -> Option<String> {
     None
 }
 
-fn get_trc_mem_info_str(event: &Event) -> Option<String> {
+fn get_trc_mem_info_str(_event: &Event) -> Option<String> {
     None
 }
 
-fn get_trc_pv_info_str(event: &Event) -> Option<String> {
+fn get_trc_pv_info_str(_event: &Event) -> Option<String> {
     None
 }
 
-fn get_trc_shadow_info_str(event: &Event) -> Option<String> {
+fn get_trc_shadow_info_str(_event: &Event) -> Option<String> {
     None
 }
 
-fn get_trc_hw_info_str(event: &Event) -> Option<String> {
+fn get_trc_hw_info_str(_event: &Event) -> Option<String> {
     None
 }
 
-fn get_trc_guest_info_str(event: &Event) -> Option<String> {
+fn get_trc_guest_info_str(_event: &Event) -> Option<String> {
     None
 }
 
