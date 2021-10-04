@@ -12,7 +12,7 @@ fn get_gen_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
     match ecode.get_minor() {
         0x001 => Some("lost_records"),
         0x002 => Some("wrap_buffer"),
-        0x003 => unreachable!(), /* cpu_change */
+        // 0x003 => unreachable!(), /* cpu_change */
         0x004 => Some("trace_irq"),
         _ => None,
     }
@@ -37,7 +37,6 @@ fn get_mem_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
 
 fn get_pv_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
     match ecode.get_minor() & 0x00F {
-        0x001 => Some("hypercall"),
         0x003 => Some("trap"),
         0x004 => Some("page_fault"),
         0x005 => Some("forced_invalid_op"),
@@ -48,7 +47,7 @@ fn get_pv_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
         0x00A => Some("gdt_ldt_mapping_fault"),
         0x00B => Some("ptwr_emulation"),
         0x00C => Some("ptwr_emulation_pae"),
-        0x00D | 0x00E => Some("hypercall"),
+        0x001 | 0x00D | 0x00E => Some("hypercall"),
         _ => None,
     }
 }
