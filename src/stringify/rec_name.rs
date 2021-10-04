@@ -53,6 +53,6 @@ pub(crate) fn get_record_name_str(event: &Event) -> String {
 
     match ecode {
         Some(v) => v,
-        None => format!("unknown ({:#010X}", event.get_code()),
+        None => format!("unknown ({:#010X})", event.get_code()),
     }
 }
