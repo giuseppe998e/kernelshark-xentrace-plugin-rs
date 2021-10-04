@@ -3,7 +3,7 @@ pub(crate) mod string;
 
 use self::pointer::from_raw_ptr;
 use crate::cbind::kshark::{entry::Entry, stream::DataStream};
-use libc::{c_long, c_ulong};
+use libc::{c_long, c_ulong, size_t};
 use std::convert::TryInto;
 use xentrace_parser::{Parser, Record};
 
@@ -38,5 +38,5 @@ pub(crate) fn get_record<'a>(
         interface.get_data_handler()?
     };
 
-    parser.get_records().get(entry.offset as usize)
+    parser.get_records().get(entry.offset as size_t)
 }
