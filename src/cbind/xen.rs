@@ -1,7 +1,7 @@
 use libc::c_uint;
 
 // Constants from "include/public/trace.h"
-pub(crate) const TRC_CLASS: c_uint = 0x0ffff000;
+pub(crate) const TRC_ALL: c_uint = 0x0ffff000;
 pub(crate) const TRC_GEN: c_uint = 0x0001f000; // General trace
 pub(crate) const TRC_SCHED: c_uint = 0x0002f000; // Xen Scheduler trace
 pub(crate) const TRC_DOM0OP: c_uint = 0x0004f000; // Xen DOM0 operation trace
