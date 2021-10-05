@@ -2,10 +2,13 @@ pub(crate) mod pointer;
 pub(crate) mod string;
 
 use libc::{c_long, c_ulong, size_t};
-use xentrace_parser::{Parser, record::Record};
 use std::convert::TryInto;
+use xentrace_parser::{record::Record, Parser};
 
-use crate::{cbind::kshark::{entry::Entry, stream::DataStream}, from_raw_ptr};
+use crate::{
+    cbind::kshark::{entry::Entry, stream::DataStream},
+    from_raw_ptr,
+};
 
 const DEFAULT_CPU_QHZ: c_ulong = 2_400_000_000;
 
