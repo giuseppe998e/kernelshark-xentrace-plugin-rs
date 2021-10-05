@@ -32,7 +32,7 @@ use std::{
 };
 use stringify::{get_record_info_str, get_record_name_str, get_record_task_str};
 use util::tsc_to_ns;
-use xentrace_parser::{Parser, record::DomainType};
+use xentrace_parser::{record::DomainType, Parser};
 
 // Use System allocator
 #[global_allocator]
@@ -105,7 +105,7 @@ fn load_entries(
     let default_domid = DomainType::Default.into_id().into();
 
     stream.add_task_id(default_domid); /* "pidmap" is probably impossible to reach
-                                                              this number of entries (dom:vcpu pairs) */
+                                       this number of entries (dom:vcpu pairs) */
 
     let rows: Vec<*mut Entry> = {
         let mut pidmap = HashMap::<c_uint, c_int>::new();
@@ -134,8 +134,9 @@ fn load_entries(
                     DomainType::Idle => 0,
                     DomainType::Default => default_domid,
                     _ => {
-                        let task_id = (pidmap.len() + 1).try_into().unwrap_or(c_int::MAX);
+                        let pidmap_len = pidmap.len();
                         *pidmap.entry(dom.into_u32()).or_insert_with(|| {
+                            let task_id = (pidmap_len + 1).try_into().unwrap_or(c_int::MAX);
                             stream.add_task_id(task_id);
                             task_id
                         })
