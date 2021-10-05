@@ -118,6 +118,7 @@ fn load_entries(
             .map(|(r, i)| {
                 let mut entry = Entry::new_boxed();
 
+                entry.offset = i;
                 entry.stream_id = stream.stream_id;
                 entry.cpu = r.get_cpu().try_into().unwrap_or(c_short::MAX);
                 entry.ts = tsc_to_ns(r.get_event().get_tsc(), first_tsc, None);
@@ -127,7 +128,6 @@ fn load_entries(
                     .into_u32()
                     .try_into()
                     .unwrap_or(c_short::MAX);
-                entry.offset = i;
 
                 let dom = r.get_domain();
                 entry.pid = match dom.get_type() {
