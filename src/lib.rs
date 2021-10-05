@@ -134,9 +134,9 @@ fn load_entries(
                     DomainType::Idle => 0,
                     DomainType::Default => default_domid,
                     _ => {
-                        let taskid_map_len = task_map.len();
+                        let task_map_len = task_map.len();
                         *task_map.entry(dom.into_u32()).or_insert_with(|| {
-                            let task_id = (taskid_map_len + 1).try_into().unwrap_or(c_int::MAX);
+                            let task_id = (task_map_len + 1).try_into().unwrap_or(c_int::MAX);
                             stream.add_task_id(task_id);
                             task_id
                         })
