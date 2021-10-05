@@ -104,12 +104,12 @@ fn load_entries(
     let parser: &Parser = stream.get_interface().get_data_handler().unwrap();
 
     let rows: Vec<*mut Entry> = {
-        let mut pidmap = HashMap::<c_uint, c_int>::new();
+        let mut task_map = HashMap::<c_uint, c_int>::new();
         let first_tsc = parser.get_records().get(0).map(|r| r.get_event().get_tsc());
 
         let default_domid = DomainType::Default.into_id().into();
-        stream.add_task_id(default_domid); /* "pidmap" is probably impossible to reach
-                                           this number of entries (dom:vcpu pairs) */
+        stream.add_task_id(default_domid); /* "task_map" is probably impossible to reach
+                                              this number of entries (dom:vcpu pairs) */
 
         parser
             .get_records()
@@ -134,9 +134,9 @@ fn load_entries(
                     DomainType::Idle => 0,
                     DomainType::Default => default_domid,
                     _ => {
-                        let pidmap_len = pidmap.len();
-                        *pidmap.entry(dom.into_u32()).or_insert_with(|| {
-                            let task_id = (pidmap_len + 1).try_into().unwrap_or(c_int::MAX);
+                        let taskid_map_len = task_map.len();
+                        *task_map.entry(dom.into_u32()).or_insert_with(|| {
+                            let task_id = (taskid_map_len + 1).try_into().unwrap_or(c_int::MAX);
                             stream.add_task_id(task_id);
                             task_id
                         })
