@@ -102,7 +102,9 @@ fn load_entries(
     let stream = from_raw_ptr!(stream_ptr).unwrap();
     let parser: &Parser = stream.get_interface().get_data_handler().unwrap();
 
-    stream.add_task_id(DomainType::Default.into_id().into()); /* "pidmap" is probably impossible to reach
+    let default_domid = DomainType::Default.into_id().into();
+
+    stream.add_task_id(default_domid); /* "pidmap" is probably impossible to reach
                                                               this number of entries (dom:vcpu pairs) */
 
     let rows: Vec<*mut Entry> = {
@@ -130,7 +132,7 @@ fn load_entries(
                 let dom = r.get_domain();
                 entry.pid = match dom.get_type() {
                     DomainType::Idle => 0,
-                    DomainType::Default => DomainType::Default.into_id().into(),
+                    DomainType::Default => default_domid,
                     _ => {
                         let task_id = (pidmap.len() + 1).try_into().unwrap_or(c_int::MAX);
                         *pidmap.entry(dom.into_u32()).or_insert_with(|| {
