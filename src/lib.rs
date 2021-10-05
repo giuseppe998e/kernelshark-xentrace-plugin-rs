@@ -34,6 +34,8 @@ use stringify::{get_record_info_str, get_record_name_str, get_record_task_str};
 use util::tsc_to_ns;
 use xentrace_parser::{record::DomainType, Parser};
 
+use crate::util::get_record;
+
 // Use System allocator
 #[global_allocator]
 static A: System = System;
@@ -49,7 +51,7 @@ fn get_pid(_stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
 }
 
 fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
-    let record = get_record!(stream_ptr, entry_ptr);
+    let record = get_record(stream_ptr, entry_ptr);
     let task_str = match record {
         Some(r) => get_record_task_str(&r.get_domain()),
         None => "unknown".to_owned(),
@@ -59,7 +61,7 @@ fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
 }
 
 fn get_event_name(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
-    let record = get_record!(stream_ptr, entry_ptr);
+    let record = get_record(stream_ptr, entry_ptr);
     let ename_str = match record {
         Some(r) => get_record_name_str(&r.get_event()),
         None => "unknown".to_owned(),
@@ -69,7 +71,7 @@ fn get_event_name(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_
 }
 
 fn get_info(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
-    let record = get_record!(stream_ptr, entry_ptr);
+    let record = get_record(stream_ptr, entry_ptr);
     let einfo_str = match record {
         Some(r) => get_record_info_str(&r.get_event()),
         None => "unknown".to_owned(),
@@ -79,7 +81,7 @@ fn get_info(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
 }
 
 fn dump_entry(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
-    let record = get_record!(stream_ptr, entry_ptr);
+    let record = get_record(stream_ptr, entry_ptr);
     let (ename_str, einfo_str) = match record {
         Some(r) => (
             get_record_name_str(&r.get_event()),
