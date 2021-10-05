@@ -1,7 +1,13 @@
-pub(crate) fn from_raw_ptr<'a, T>(ptr: *mut T) -> Option<&'a T> {
-    unsafe { ptr.as_ref() }
+#[macro_export]
+macro_rules! from_raw_ptr {
+    ($($ptr:ident),+) => {
+        unsafe { ($($ptr.as_ref()),+) }
+    };
 }
 
-pub(crate) fn from_raw_ptr_mut<'a, T>(ptr: *mut T) -> Option<&'a mut T> {
-    unsafe { ptr.as_mut() }
+#[macro_export]
+macro_rules! from_raw_ptr_mut {
+    ($($ptr:ident),+) => {
+        unsafe { ($($ptr.as_mut()),+) }
+    };
 }

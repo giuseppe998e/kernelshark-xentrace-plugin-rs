@@ -31,13 +31,8 @@ use std::{
     ptr::null_mut,
 };
 use stringify::{get_record_info_str, get_record_name_str, get_record_task_str};
-use util::{
-    get_record,
-    pointer::{from_raw_ptr, from_raw_ptr_mut},
-    string::{from_str_ptr, into_str_ptr},
-    tsc_to_ns,
-};
-use xentrace_parser::{record::DomainType, Parser};
+use util::tsc_to_ns;
+use xentrace_parser::{Parser, record::DomainType};
 
 // Use System allocator
 #[global_allocator]
@@ -46,7 +41,7 @@ static A: System = System;
 static KSHARK_SOURCE_TYPE: &str = "xentrace_bin";
 
 fn get_pid(_stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
-    let entry = from_raw_ptr(entry_ptr);
+    let entry = from_raw_ptr!(entry_ptr);
     match entry {
         Some(e) if e.visible & KS_PLUGIN_UNTOUCHED_MASK > 0 => e.pid,
         _ => KS_EMPTY_BIN,
@@ -54,37 +49,37 @@ fn get_pid(_stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
 }
 
 fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
-    let record = get_record(stream_ptr, entry_ptr);
+    let record = get_record!(stream_ptr, entry_ptr);
     let task_str = match record {
         Some(r) => get_record_task_str(&r.get_domain()),
         None => "unknown".to_owned(),
     };
 
-    into_str_ptr(task_str)
+    into_str_ptr!(task_str)
 }
 
 fn get_event_name(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
-    let record = get_record(stream_ptr, entry_ptr);
+    let record = get_record!(stream_ptr, entry_ptr);
     let ename_str = match record {
         Some(r) => get_record_name_str(&r.get_event()),
         None => "unknown".to_owned(),
     };
 
-    into_str_ptr(ename_str)
+    into_str_ptr!(ename_str)
 }
 
 fn get_info(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
-    let record = get_record(stream_ptr, entry_ptr);
+    let record = get_record!(stream_ptr, entry_ptr);
     let einfo_str = match record {
         Some(r) => get_record_info_str(&r.get_event()),
         None => "unknown".to_owned(),
     };
 
-    into_str_ptr(einfo_str)
+    into_str_ptr!(einfo_str)
 }
 
 fn dump_entry(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
-    let record = get_record(stream_ptr, entry_ptr);
+    let record = get_record!(stream_ptr, entry_ptr);
     let (ename_str, einfo_str) = match record {
         Some(r) => (
             get_record_name_str(&r.get_event()),
@@ -93,7 +88,7 @@ fn dump_entry(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char
         None => ("unknown".to_owned(), "unknown".to_owned()),
     };
 
-    into_str_ptr(format!(
+    into_str_ptr!(format!(
         "Record {{ Name: \"{}\", Info: \"{}\" }}",
         ename_str, einfo_str
     ))
@@ -104,7 +99,7 @@ fn load_entries(
     _context_ptr: *mut Context,
     rows_ptr: *mut *mut *mut Entry,
 ) -> ssize_t {
-    let stream = from_raw_ptr(stream_ptr).unwrap();
+    let stream = from_raw_ptr!(stream_ptr).unwrap();
     let parser: &Parser = stream.get_interface().get_data_handler().unwrap();
 
     stream.add_task_id(DomainType::Default.into_id().into()); /* "pidmap" is probably impossible to reach
@@ -164,7 +159,7 @@ fn load_entries(
 // KSHARK_INPUT_CHECK @ libkshark-plugin.h
 #[no_mangle]
 pub extern "C" fn kshark_input_check(file_ptr: *mut c_char, _frmt: *mut *mut c_char) -> bool {
-    if let Ok(fstr) = from_str_ptr(file_ptr) {
+    if let Ok(fstr) = from_str_ptr!(file_ptr) {
         if let Ok(mut file) = File::open(Path::new(fstr)) {
             let ecode = {
                 let mut buf = [0u8; 4];
@@ -188,7 +183,7 @@ pub extern "C" fn kshark_input_format() -> *mut c_char {
 // KSHARK_INPUT_INITIALIZER @ libkshark-plugin.h
 #[no_mangle]
 pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int {
-    let mut stream = from_raw_ptr_mut(stream_ptr).unwrap();
+    let mut stream = from_raw_ptr_mut!(stream_ptr).unwrap();
     let parser = Box::new(Parser::new(stream.get_file_path()).unwrap());
 
     stream.idle_pid = 0;
@@ -215,7 +210,7 @@ pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int
 // KSHARK_INPUT_DEINITIALIZER @ libkshark-plugin.h
 #[no_mangle]
 pub extern "C" fn kshark_input_deinitializer(stream_ptr: *mut DataStream) {
-    let stream = from_raw_ptr(stream_ptr).unwrap();
+    let stream = from_raw_ptr!(stream_ptr).unwrap();
     let interface = stream.get_mut_interface();
     let parser: Box<Parser> = unsafe { Box::from_raw(interface.handle as _) };
 
