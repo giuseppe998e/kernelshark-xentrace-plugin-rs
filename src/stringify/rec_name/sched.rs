@@ -1,4 +1,4 @@
-use xentrace_parser::EventCode;
+use xentrace_parser::record::EventCode;
 
 fn get_sched_min_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
     match ecode.get_minor() {

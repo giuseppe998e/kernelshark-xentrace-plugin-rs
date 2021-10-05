@@ -37,7 +37,7 @@ use util::{
     string::{from_str_ptr, into_str_ptr},
     tsc_to_ns,
 };
-use xentrace_parser::{DomainType, Parser};
+use xentrace_parser::{record::DomainType, Parser};
 
 // Use System allocator
 #[global_allocator]

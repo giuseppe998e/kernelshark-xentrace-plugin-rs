@@ -5,7 +5,7 @@ use self::pointer::from_raw_ptr;
 use crate::cbind::kshark::{entry::Entry, stream::DataStream};
 use libc::{c_long, c_ulong, size_t};
 use std::convert::TryInto;
-use xentrace_parser::{Parser, Record};
+use xentrace_parser::{record::Record, Parser};
 
 const DEFAULT_CPU_QHZ: c_ulong = 2_400_000_000;
 

@@ -6,7 +6,7 @@ use crate::{
     cbind::xen::*,
     stringify::rec_name::{hvm::get_hvm_name_str, hw::get_hw_name_str, sched::get_sched_name_str},
 };
-use xentrace_parser::{Event, EventCode};
+use xentrace_parser::record::{Event, EventCode};
 
 fn get_gen_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
     match ecode.get_minor() {
