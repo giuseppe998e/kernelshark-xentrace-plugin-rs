@@ -21,6 +21,7 @@ mod cbind;
 mod stringify;
 mod util;
 
+use crate::util::get_record;
 use cbind::kshark::{
     context::Context, entry::Entry, interface::GenericStreamInterface, stream::DataStream,
     KS_EMPTY_BIN, KS_PLUGIN_UNTOUCHED_MASK,
@@ -33,8 +34,6 @@ use std::{
 use stringify::{get_record_info_str, get_record_name_str, get_record_task_str};
 use util::tsc_to_ns;
 use xentrace_parser::{record::DomainType, Parser};
-
-use crate::util::get_record;
 
 // Use System allocator
 #[global_allocator]
