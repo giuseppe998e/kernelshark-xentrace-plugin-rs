@@ -1,7 +1,7 @@
 pub(crate) mod pointer;
 pub(crate) mod string;
 
-use libc::{c_long, c_ulong, size_t};
+use libc::{c_long, c_ulong};
 use std::convert::TryInto;
 use xentrace_parser::{record::Record, Parser};
 
@@ -41,5 +41,5 @@ pub(crate) fn get_record<'a>(
         interface.get_data_handler()?
     };
 
-    parser.get_records().get(entry.offset as size_t)
+    parser.get_records().get(entry.offset as usize)
 }
