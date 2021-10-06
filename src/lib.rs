@@ -53,7 +53,7 @@ fn get_event_id(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
             let code = r.get_event().get_code();
             code.into_u32().try_into().ok()
         })
-        .unwrap_or(0i32)
+        .unwrap_or(0)
 }
 
 fn get_event_name(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
