@@ -27,10 +27,7 @@ use cbind::kshark::{
     KS_EMPTY_BIN, KS_PLUGIN_UNTOUCHED_MASK,
 };
 use libc::{c_char, c_int, c_short, c_uint, c_void, ssize_t};
-use std::{
-    alloc::System, collections::HashMap, convert::TryInto, fs::File, io::Read, path::Path,
-    ptr::null_mut,
-};
+use std::{alloc::System, convert::TryInto, fs::File, io::Read, path::Path, ptr::null_mut};
 use stringify::{get_record_info_str, get_record_name_str, get_record_task_str};
 use util::tsc_to_ns;
 use xentrace_parser::{record::DomainType, Parser};
@@ -53,7 +50,17 @@ fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     let record = get_record(stream_ptr, entry_ptr);
     let task_str = match record {
         Some(r) => get_record_task_str(&r.get_domain()),
-        None => "unknown".to_owned(),
+        None => {
+            let entry = from_raw_ptr!(entry_ptr);
+            match entry {
+                Some(e) if e.pid != DomainType::Default.into_id().into() => {
+                    let type_ = e.pid >> 16;
+                    let vcpu = (e.pid & 0x0000FFFF) - 1;
+                    format!("d{}/v{}", type_, vcpu)
+                }
+                _ => "default/v?".to_owned(),
+            }
+        }
     };
 
     into_str_ptr!(task_str)
@@ -104,12 +111,10 @@ fn load_entries(
     let parser = stream.get_interface().get_data_handler::<Parser>().unwrap();
 
     let rows: Vec<*mut Entry> = {
-        let mut task_map = HashMap::<c_uint, c_int>::new();
         let first_tsc = parser.get_records().get(0).map(|r| r.get_event().get_tsc());
 
         let default_domid = DomainType::Default.into_id().into();
-        stream.add_task_id(default_domid); /* "task_map" is probably impossible to reach
-                                              this number of entries (dom:vcpu pairs) */
+        stream.add_task_id(default_domid);
 
         parser
             .get_records()
@@ -134,12 +139,9 @@ fn load_entries(
                     DomainType::Idle => 0,
                     DomainType::Default => default_domid,
                     _ => {
-                        let task_map_len = task_map.len();
-                        *task_map.entry(dom.into_u32()).or_insert_with(|| {
-                            let task_id = (task_map_len + 1).try_into().unwrap_or(c_int::MAX);
-                            stream.add_task_id(task_id);
-                            task_id
-                        })
+                        let task_id = (dom.into_u32() + 1).try_into().unwrap_or(i32::MAX);
+                        stream.add_task_id(task_id);
+                        task_id
                     }
                 };
 
