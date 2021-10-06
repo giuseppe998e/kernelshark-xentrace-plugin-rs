@@ -158,7 +158,7 @@ fn load_entries(
                     DomainType::Idle => 0,
                     DomainType::Default => default_domid,
                     _ => {
-                        let task_id = (dom.into_u32() + 1).try_into().unwrap_or(i32::MAX);
+                        let task_id = (dom.into_u32() + 1).try_into().unwrap_or(c_int::MAX);
                         stream.add_task_id(task_id);
                         task_id
                     }
