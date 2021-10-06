@@ -46,6 +46,26 @@ fn get_pid(_stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
     }
 }
 
+fn get_event_id(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
+    let record = get_record(stream_ptr, entry_ptr);
+    record
+        .and_then(|r| {
+            let code = r.get_event().get_code();
+            code.into_u32().try_into().ok()
+        })
+        .unwrap_or(0)
+}
+
+fn get_event_name(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
+    let record = get_record(stream_ptr, entry_ptr);
+    let name_str = match record {
+        Some(r) => get_record_name_str(&r.get_event()),
+        None => "unknown".to_owned(),
+    };
+
+    into_str_ptr!(name_str)
+}
+
 fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     let entry = from_raw_ptr!(entry_ptr);
     let task_str = match entry {
@@ -73,16 +93,6 @@ fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     };
 
     into_str_ptr!(task_str)
-}
-
-fn get_event_name(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
-    let record = get_record(stream_ptr, entry_ptr);
-    let name_str = match record {
-        Some(r) => get_record_name_str(&r.get_event()),
-        None => "unknown".to_owned(),
-    };
-
-    into_str_ptr!(name_str)
 }
 
 fn get_info(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
@@ -148,7 +158,7 @@ fn load_entries(
                     DomainType::Idle => 0,
                     DomainType::Default => default_domid,
                     _ => {
-                        let task_id = (dom.into_u32() + 1).try_into().unwrap_or(i32::MAX);
+                        let task_id = (dom.into_u32() + 1).try_into().unwrap_or(c_int::MAX);
                         stream.add_task_id(task_id);
                         task_id
                     }
@@ -208,8 +218,9 @@ pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int
         let mut interface = GenericStreamInterface::new_boxed();
 
         interface.get_pid = get_pid as _;
-        interface.get_task = get_task as _;
+        interface.get_event_id = get_event_id as _;
         interface.get_event_name = get_event_name as _;
+        interface.get_task = get_task as _;
         interface.get_info = get_info as _;
         interface.dump_entry = dump_entry as _;
         interface.load_entries = load_entries as _;
