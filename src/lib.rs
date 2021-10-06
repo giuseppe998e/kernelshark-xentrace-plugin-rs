@@ -30,10 +30,7 @@ use libc::{c_char, c_int, c_short, c_uint, c_void, ssize_t};
 use std::{alloc::System, convert::TryInto, fs::File, io::Read, path::Path, ptr::null_mut};
 use stringify::{get_record_info_str, get_record_name_str, get_record_task_str};
 use util::tsc_to_ns;
-use xentrace_parser::{
-    record::DomainType,
-    Parser,
-};
+use xentrace_parser::{record::DomainType, Parser};
 
 // Use System allocator
 #[global_allocator]
@@ -50,26 +47,29 @@ fn get_pid(_stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
 }
 
 fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
-    let entry = from_raw_ptr!(entry_ptr).unwrap(); // Must be
-    let task_str = {
-        let record = {
-            let stream = from_raw_ptr!(stream_ptr);
-            stream.and_then(|s| {
-                let interface = s.get_interface();
-                let parser = interface.get_data_handler::<Parser>().unwrap();
-                parser.get_records().get(entry.offset as usize)
-            })
-        };
+    let entry = from_raw_ptr!(entry_ptr);
+    let task_str = match entry {
+        Some(e) => {
+            let record = {
+                let stream = from_raw_ptr!(stream_ptr);
+                stream.and_then(|s| {
+                    let interface = s.get_interface();
+                    let parser = interface.get_data_handler::<Parser>().unwrap();
+                    parser.get_records().get(e.offset as usize)
+                })
+            };
 
-        match record {
-            Some(r) => get_record_task_str(&r.get_domain()),
-            _ if entry.pid != DomainType::Default.into_id().into() => {
-                let type_ = entry.pid >> 16;
-                let vcpu = (entry.pid & 0x0000FFFF) - 1;
-                format!("d{}/v{}", type_, vcpu)
+            match record {
+                Some(r) => get_record_task_str(&r.get_domain()),
+                _ if e.pid != DomainType::Default.into_id().into() => {
+                    let type_ = e.pid >> 16;
+                    let vcpu = (e.pid & 0x0000FFFF) - 1;
+                    format!("d{}/v{}", type_, vcpu)
+                }
+                _ => "default/v?".to_owned(),
             }
-            _ => "default/v?".to_owned(),
         }
+        None => "unknown".to_owned(),
     };
 
     into_str_ptr!(task_str)
