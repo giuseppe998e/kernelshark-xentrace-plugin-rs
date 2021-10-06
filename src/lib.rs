@@ -101,7 +101,7 @@ fn load_entries(
     rows_ptr: *mut *mut *mut Entry,
 ) -> ssize_t {
     let stream = from_raw_ptr!(stream_ptr).unwrap();
-    let parser: &Parser = stream.get_interface().get_data_handler().unwrap();
+    let parser = stream.get_interface().get_data_handler::<Parser>().unwrap();
 
     let rows: Vec<*mut Entry> = {
         let mut task_map = HashMap::<c_uint, c_int>::new();
@@ -215,7 +215,7 @@ pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int
 pub extern "C" fn kshark_input_deinitializer(stream_ptr: *mut DataStream) {
     let stream = from_raw_ptr!(stream_ptr).unwrap();
     let interface = stream.get_mut_interface();
-    let parser: Box<Parser> = unsafe { Box::from_raw(interface.handle as _) };
+    let parser = unsafe { Box::<Parser>::from_raw(interface.handle as _) };
 
     drop(parser);
     interface.handle = null_mut::<c_void>();

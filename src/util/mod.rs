@@ -35,10 +35,10 @@ pub(crate) fn get_record<'a>(
     entry_ptr: *mut Entry,
 ) -> Option<&'a Record> {
     let entry = from_raw_ptr!(entry_ptr)?;
-    let parser: &Parser = {
+    let parser = {
         let stream = from_raw_ptr!(stream_ptr).unwrap();
         let interface = stream.get_interface();
-        interface.get_data_handler()?
+        interface.get_data_handler::<Parser>()?
     };
 
     parser.get_records().get(entry.offset as usize)
