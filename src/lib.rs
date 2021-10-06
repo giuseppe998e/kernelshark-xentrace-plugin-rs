@@ -48,15 +48,12 @@ fn get_pid(_stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
 
 fn get_event_id(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
     let record = get_record(stream_ptr, entry_ptr);
-    match record {
-        Some(r) => r
-            .get_event()
-            .get_code()
-            .into_u32()
-            .try_into()
-            .unwrap_or(c_int::MAX),
-        None => 0,
-    }
+    record
+        .and_then(|r| {
+            let code = r.get_event().get_code();
+            code.into_u32().try_into().ok()
+        })
+        .unwrap_or(0i32)
 }
 
 fn get_event_name(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
