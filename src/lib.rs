@@ -30,7 +30,7 @@ use libc::{c_char, c_int, c_short, c_uint, c_void, ssize_t};
 use std::{alloc::System, convert::TryInto, fs::File, io::Read, path::Path, ptr::null_mut};
 use stringify::{get_record_info_str, get_record_name_str, get_record_task_str};
 use util::tsc_to_ns;
-use xentrace_parser::{record::DomainType, Parser};
+use xentrace_parser::{Parser, record::{Domain, DomainType}};
 
 // Use System allocator
 #[global_allocator]
@@ -82,9 +82,8 @@ fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
             match record {
                 Some(r) => get_record_task_str(&r.get_domain()),
                 _ if e.pid != DomainType::Default.into_id().into() => {
-                    let type_ = e.pid >> 16;
-                    let vcpu = (e.pid & 0x0000FFFF) - 1;
-                    format!("d{}/v{}", type_, vcpu)
+                    let dom = Domain::from_u32((e.pid - 1).try_into().unwrap());
+                    format!("d{}/v{}", dom.get_type().into_id(), dom.get_vcpu())
                 }
                 _ => "default/v?".to_owned(),
             }
