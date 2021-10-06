@@ -77,27 +77,27 @@ fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
 
 fn get_event_name(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     let record = get_record(stream_ptr, entry_ptr);
-    let ename_str = match record {
+    let name_str = match record {
         Some(r) => get_record_name_str(&r.get_event()),
         None => "unknown".to_owned(),
     };
 
-    into_str_ptr!(ename_str)
+    into_str_ptr!(name_str)
 }
 
 fn get_info(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     let record = get_record(stream_ptr, entry_ptr);
-    let einfo_str = match record {
+    let info_str = match record {
         Some(r) => get_record_info_str(&r.get_event()),
         None => "unknown".to_owned(),
     };
 
-    into_str_ptr!(einfo_str)
+    into_str_ptr!(info_str)
 }
 
 fn dump_entry(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     let record = get_record(stream_ptr, entry_ptr);
-    let (ename_str, einfo_str) = match record {
+    let (name_str, info_str) = match record {
         Some(r) => (
             get_record_name_str(&r.get_event()),
             get_record_info_str(&r.get_event()),
@@ -107,7 +107,7 @@ fn dump_entry(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char
 
     into_str_ptr!(format!(
         "Record {{ Name: \"{}\", Info: \"{}\" }}",
-        ename_str, einfo_str
+        name_str, info_str
     ))
 }
 
