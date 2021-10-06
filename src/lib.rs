@@ -21,20 +21,16 @@ mod cbind;
 mod stringify;
 mod util;
 
+use crate::util::get_record;
 use cbind::kshark::{
     context::Context, entry::Entry, interface::GenericStreamInterface, stream::DataStream,
     KS_EMPTY_BIN, KS_PLUGIN_UNTOUCHED_MASK,
 };
 use libc::{c_char, c_int, c_short, c_uint, c_void, ssize_t};
-use std::{
-    alloc::System, collections::HashMap, convert::TryInto, fs::File, io::Read, path::Path,
-    ptr::null_mut,
-};
+use std::{alloc::System, convert::TryInto, fs::File, io::Read, path::Path, ptr::null_mut};
 use stringify::{get_record_info_str, get_record_name_str, get_record_task_str};
 use util::tsc_to_ns;
 use xentrace_parser::{record::DomainType, Parser};
-
-use crate::util::get_record;
 
 // Use System allocator
 #[global_allocator]
@@ -51,9 +47,28 @@ fn get_pid(_stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
 }
 
 fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
-    let record = get_record(stream_ptr, entry_ptr);
-    let task_str = match record {
-        Some(r) => get_record_task_str(&r.get_domain()),
+    let entry = from_raw_ptr!(entry_ptr);
+    let task_str = match entry {
+        Some(e) => {
+            let record = {
+                let stream = from_raw_ptr!(stream_ptr);
+                stream.and_then(|s| {
+                    let interface = s.get_interface();
+                    let parser = interface.get_data_handler::<Parser>().unwrap();
+                    parser.get_records().get(e.offset as usize)
+                })
+            };
+
+            match record {
+                Some(r) => get_record_task_str(&r.get_domain()),
+                _ if e.pid != DomainType::Default.into_id().into() => {
+                    let type_ = e.pid >> 16;
+                    let vcpu = (e.pid & 0x0000FFFF) - 1;
+                    format!("d{}/v{}", type_, vcpu)
+                }
+                _ => "default/v?".to_owned(),
+            }
+        }
         None => "unknown".to_owned(),
     };
 
@@ -62,27 +77,27 @@ fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
 
 fn get_event_name(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     let record = get_record(stream_ptr, entry_ptr);
-    let ename_str = match record {
+    let name_str = match record {
         Some(r) => get_record_name_str(&r.get_event()),
         None => "unknown".to_owned(),
     };
 
-    into_str_ptr!(ename_str)
+    into_str_ptr!(name_str)
 }
 
 fn get_info(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     let record = get_record(stream_ptr, entry_ptr);
-    let einfo_str = match record {
+    let info_str = match record {
         Some(r) => get_record_info_str(&r.get_event()),
         None => "unknown".to_owned(),
     };
 
-    into_str_ptr!(einfo_str)
+    into_str_ptr!(info_str)
 }
 
 fn dump_entry(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     let record = get_record(stream_ptr, entry_ptr);
-    let (ename_str, einfo_str) = match record {
+    let (name_str, info_str) = match record {
         Some(r) => (
             get_record_name_str(&r.get_event()),
             get_record_info_str(&r.get_event()),
@@ -92,7 +107,7 @@ fn dump_entry(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char
 
     into_str_ptr!(format!(
         "Record {{ Name: \"{}\", Info: \"{}\" }}",
-        ename_str, einfo_str
+        name_str, info_str
     ))
 }
 
@@ -102,16 +117,13 @@ fn load_entries(
     rows_ptr: *mut *mut *mut Entry,
 ) -> ssize_t {
     let stream = from_raw_ptr!(stream_ptr).unwrap();
-    let parser: &Parser = stream.get_interface().get_data_handler().unwrap();
-
-    let default_domid = DomainType::Default.into_id().into();
-
-    stream.add_task_id(default_domid); /* "pidmap" is probably impossible to reach
-                                       this number of entries (dom:vcpu pairs) */
+    let parser = stream.get_interface().get_data_handler::<Parser>().unwrap();
 
     let rows: Vec<*mut Entry> = {
-        let mut pidmap = HashMap::<c_uint, c_int>::new();
         let first_tsc = parser.get_records().get(0).map(|r| r.get_event().get_tsc());
+
+        let default_domid = DomainType::Default.into_id().into();
+        stream.add_task_id(default_domid);
 
         parser
             .get_records()
@@ -136,12 +148,9 @@ fn load_entries(
                     DomainType::Idle => 0,
                     DomainType::Default => default_domid,
                     _ => {
-                        let pidmap_len = pidmap.len();
-                        *pidmap.entry(dom.into_u32()).or_insert_with(|| {
-                            let task_id = (pidmap_len + 1).try_into().unwrap_or(c_int::MAX);
-                            stream.add_task_id(task_id);
-                            task_id
-                        })
+                        let task_id = (dom.into_u32() + 1).try_into().unwrap_or(i32::MAX);
+                        stream.add_task_id(task_id);
+                        task_id
                     }
                 };
 
@@ -217,7 +226,7 @@ pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int
 pub extern "C" fn kshark_input_deinitializer(stream_ptr: *mut DataStream) {
     let stream = from_raw_ptr!(stream_ptr).unwrap();
     let interface = stream.get_mut_interface();
-    let parser: Box<Parser> = unsafe { Box::from_raw(interface.handle as _) };
+    let parser = unsafe { Box::<Parser>::from_raw(interface.handle as _) };
 
     drop(parser);
     interface.handle = null_mut::<c_void>();
