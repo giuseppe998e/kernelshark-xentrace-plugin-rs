@@ -7,7 +7,7 @@ readme = "README.md"
 license = "LGPL-2.1-or-later"
 keywords = ["xen", "xentrace", "kenelshark", "ks", "trace", "plugin", "ffi"]
 repository = "https://github.com/giuseppe998e/kernelshark-xentrace-plugin-rs/"
-edition = "2018"
+edition = "2021"
 publish = false
 
 [dependencies]
