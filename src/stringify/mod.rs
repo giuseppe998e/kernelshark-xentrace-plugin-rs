@@ -1,20 +1,16 @@
 mod rec_info;
 mod rec_name;
 
+use xentrace_parser::record::{Domain, DomainType};
+
 pub(crate) use rec_info::get_record_info_str;
 pub(crate) use rec_name::get_record_name_str;
 
-use xentrace_parser::record::{Domain, DomainType};
-
 pub(crate) fn get_record_task_str(domain: &Domain) -> String {
-    if domain.type_ == DomainType::Default {
-        return "default/v?".to_owned();
+    match domain.type_ {
+        DomainType::Zero => format!("host/v{}", domain.vcpu),
+        DomainType::Idle => format!("idle/v{}", domain.vcpu),
+        DomainType::Default => "default/v?".to_owned(),
+        DomainType::Guest(d) => format!("d{}/v{}", d, domain.vcpu),
     }
-
-    let dom_str: String = match domain.type_ {
-        DomainType::Idle => "idle".to_owned(),
-        not_idle => format!("d{}", not_idle.into_id()),
-    };
-
-    format!("{}/v{}", dom_str, domain.vcpu)
 }
