@@ -18,25 +18,28 @@
  * USA
  */
 mod cbind;
-mod stringify;
-mod util;
-
 use cbind::kshark::{
     context::Context, entry::Entry, interface::GenericStreamInterface, stream::DataStream,
     KS_EMPTY_BIN, KS_PLUGIN_UNTOUCHED_MASK,
 };
-use libc::{c_char, c_int, c_short, c_uint, c_void, ssize_t};
-use std::{alloc::System, convert::TryInto, fs::File, io::Read, path::Path, ptr::null_mut};
+
+mod stringify;
 use stringify::{get_record_info_str, get_record_name_str, get_record_task_str};
+
+mod util;
 use util::{get_record, tsc_to_ns};
+
 use xentrace_parser::{
     record::{Domain, DomainType},
-    Parser,
+    xentrace_parse, Trace,
 };
 
+use libc::{c_char, c_int, c_short, c_uint, c_void, ssize_t};
+use std::{alloc::System, convert::TryInto, fs::File, io::Read, path::Path, ptr::null_mut};
+
 // Use System allocator
-#[global_allocator]
-static A: System = System;
+//#[global_allocator]
+//static A: System = System;
 
 static KSHARK_SOURCE_TYPE: &str = "xentrace_bin";
 
@@ -52,7 +55,7 @@ fn get_event_id(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
     let record = get_record(stream_ptr, entry_ptr);
     record
         .and_then(|r| {
-            let code = r.get_event().get_code();
+            let code = r.event.code;
             code.into_u32().try_into().ok()
         })
         .unwrap_or(0)
@@ -61,7 +64,7 @@ fn get_event_id(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
 fn get_event_name(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     let record = get_record(stream_ptr, entry_ptr);
     let name_str = match record {
-        Some(r) => get_record_name_str(&r.get_event()),
+        Some(r) => get_record_name_str(&r.event),
         None => "unknown".to_owned(),
     };
 
@@ -76,16 +79,16 @@ fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
                 let stream = from_raw_ptr!(stream_ptr);
                 stream.and_then(|s| {
                     let interface = s.get_interface();
-                    let parser = interface.get_data_handler::<Parser>().unwrap();
-                    parser.get_records().get(e.offset as usize)
+                    let trace = interface.get_data_handler::<Trace>().unwrap();
+                    trace.records.get(e.offset as usize)
                 })
             };
 
             match record {
-                Some(r) => get_record_task_str(&r.get_domain()),
+                Some(r) => get_record_task_str(&r.domain),
                 _ if e.pid != DomainType::Default.into_id().into() => {
                     let dom = Domain::from_u32((e.pid - 1).try_into().unwrap());
-                    format!("d{}/v{}", dom.get_type().into_id(), dom.get_vcpu())
+                    format!("d{}/v{}", dom.type_.into_id(), dom.vcpu)
                 }
                 _ => "default/v?".to_owned(),
             }
@@ -99,7 +102,7 @@ fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
 fn get_info(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     let record = get_record(stream_ptr, entry_ptr);
     let info_str = match record {
-        Some(r) => get_record_info_str(&r.get_event()),
+        Some(r) => get_record_info_str(&r.event),
         None => "unknown".to_owned(),
     };
 
@@ -110,8 +113,8 @@ fn dump_entry(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char
     let record = get_record(stream_ptr, entry_ptr);
     let (name_str, info_str) = match record {
         Some(r) => (
-            get_record_name_str(&r.get_event()),
-            get_record_info_str(&r.get_event()),
+            get_record_name_str(&r.event),
+            get_record_info_str(&r.event),
         ),
         None => ("unknown".to_owned(), "unknown".to_owned()),
     };
@@ -128,16 +131,16 @@ fn load_entries(
     rows_ptr: *mut *mut *mut Entry,
 ) -> ssize_t {
     let stream = from_raw_ptr!(stream_ptr).unwrap();
-    let parser = stream.get_interface().get_data_handler::<Parser>().unwrap();
+    let trace = stream.get_interface().get_data_handler::<Trace>().unwrap();
 
     let rows: Vec<*mut Entry> = {
-        let first_tsc = parser.get_records().get(0).map(|r| r.get_event().get_tsc());
+        let first_tsc = trace.records.get(0).map(|r| r.event.tsc);
 
         let default_domid = DomainType::Default.into_id().into();
         stream.add_task_id(default_domid);
 
-        parser
-            .get_records()
+        trace
+            .records
             .iter()
             .zip(0..)
             .map(|(r, i)| {
@@ -145,17 +148,17 @@ fn load_entries(
 
                 entry.offset = i;
                 entry.stream_id = stream.stream_id;
-                entry.cpu = r.get_cpu().try_into().unwrap_or(c_short::MAX);
-                entry.ts = tsc_to_ns(r.get_event().get_tsc(), first_tsc, None);
+                entry.cpu = r.cpu.try_into().unwrap_or(c_short::MAX);
+                entry.ts = tsc_to_ns(r.event.tsc, first_tsc, None);
                 entry.event_id = r
-                    .get_event()
-                    .get_code()
+                    .event
+                    .code
                     .into_u32()
                     .try_into()
                     .unwrap_or(c_short::MAX);
 
-                let dom = r.get_domain();
-                entry.pid = match dom.get_type() {
+                let dom = r.domain;
+                entry.pid = match dom.type_ {
                     DomainType::Idle => 0,
                     DomainType::Default => default_domid,
                     _ => {
@@ -174,8 +177,8 @@ fn load_entries(
         *rows_ptr = Box::into_raw(rows.into_boxed_slice()) as _;
     }
 
-    parser
-        .get_records()
+    trace
+        .records
         .len()
         .try_into()
         .unwrap_or(ssize_t::MAX)
@@ -192,7 +195,7 @@ pub extern "C" fn kshark_input_check(file_ptr: *mut c_char, _frmt: *mut *mut c_c
                 0x0FFFFFFF & c_uint::from_ne_bytes(buf)
             };
 
-            return xentrace_parser::TRC_TRACE_CPU_CHANGE == ecode; // XXX Must use interface/xen
+            return xentrace_parser::codes::TRC_TRACE_CPU_CHANGE == ecode; // XXX Must use interface/xen
         }
     }
 
@@ -209,11 +212,11 @@ pub extern "C" fn kshark_input_format() -> *mut c_char {
 #[no_mangle]
 pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int {
     let mut stream = from_raw_ptr_mut!(stream_ptr).unwrap();
-    let parser = Box::new(Parser::new(stream.get_file_path()).unwrap());
+    let trace = Box::new(xentrace_parse(stream.get_file_path()).unwrap());
 
     stream.idle_pid = 0;
-    stream.n_cpus = parser.cpu_count().into();
-    stream.n_events = parser.get_records().len().try_into().unwrap_or(c_int::MAX);
+    stream.n_cpus = trace.cpu_count().into();
+    stream.n_events = trace.records.len().try_into().unwrap_or(c_int::MAX);
 
     stream.interface = {
         let mut interface = GenericStreamInterface::new_boxed();
@@ -225,7 +228,7 @@ pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int
         interface.get_info = get_info as _;
         interface.dump_entry = dump_entry as _;
         interface.load_entries = load_entries as _;
-        interface.handle = Box::into_raw(parser) as _;
+        interface.handle = Box::into_raw(trace) as _;
 
         Box::into_raw(interface)
     };
@@ -238,8 +241,8 @@ pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int
 pub extern "C" fn kshark_input_deinitializer(stream_ptr: *mut DataStream) {
     let stream = from_raw_ptr!(stream_ptr).unwrap();
     let interface = stream.get_mut_interface();
-    let parser = unsafe { Box::<Parser>::from_raw(interface.handle as _) };
+    let trace = unsafe { Box::<Trace>::from_raw(interface.handle as _) };
 
-    drop(parser);
+    drop(trace);
     interface.handle = null_mut::<c_void>();
 }
