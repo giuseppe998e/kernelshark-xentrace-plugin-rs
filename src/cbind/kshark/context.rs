@@ -2,6 +2,19 @@ use super::stream::DataStream;
 use libc::{c_int, c_uchar, c_void};
 use std::ptr::null_mut;
 
+/// Structure representing the parameters of the stream descriptor
+/// array owned by the kshark session.
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct StreamArrayDescriptor /* kshark_stream_array_descriptor */ {
+    /// The identifier of the Data stream added.
+    pub max_stream_id: c_int,
+    /// The the next free Data stream identifier (index).
+    pub next_free_stream_id: c_int,
+    /// The capacity of the array of stream objects (pointers).
+    pub array_size: c_int,
+}
+
 /// Structure representing a kshark session.
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -42,17 +55,4 @@ impl Default for Context {
             n_plugins: Default::default(),
         }
     }
-}
-
-/// Structure representing the parameters of the stream descriptor
-/// array owned by the kshark session.
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
-pub struct StreamArrayDescriptor /* kshark_stream_array_descriptor */ {
-    /// The identifier of the Data stream added.
-    pub max_stream_id: c_int,
-    /// The the next free Data stream identifier (index).
-    pub next_free_stream_id: c_int,
-    /// The capacity of the array of stream objects (pointers).
-    pub array_size: c_int,
 }

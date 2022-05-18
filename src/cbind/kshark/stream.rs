@@ -18,6 +18,8 @@ pub struct DataStream /* kshark_data_stream */ {
     pub stream_id: c_short,
     /// The number of CPUs presented in this data stream.
     pub n_cpus: c_int,
+    /// Hash table of Idle CPUs.
+    pub idle_cpus: *mut c_void, // XXX NOT IMPL - kshark_hash_id
     /// The number of distinct event types presented in this data stream.
     pub n_events: c_int,
     /// The Process Id of the Idle task.
@@ -89,6 +91,7 @@ impl Default for DataStream {
         Self {
             stream_id: Default::default(),
             n_cpus: Default::default(),
+            idle_cpus: null_mut::<c_void>(),
             n_events: Default::default(),
             idle_pid: Default::default(),
             file: null_mut::<c_char>(),
