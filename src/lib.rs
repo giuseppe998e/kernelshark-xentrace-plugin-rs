@@ -35,11 +35,7 @@ use xentrace_parser::{
 };
 
 use libc::{c_char, c_int, c_short, c_uint, c_void, ssize_t};
-use std::{alloc::System, convert::TryInto, fs::File, io::Read, path::Path, ptr::null_mut};
-
-// Use System allocator
-//#[global_allocator]
-//static A: System = System;
+use std::{convert::TryInto, fs::File, io::Read, path::Path, ptr::null_mut};
 
 static KSHARK_SOURCE_TYPE: &str = "xentrace_bin";
 
