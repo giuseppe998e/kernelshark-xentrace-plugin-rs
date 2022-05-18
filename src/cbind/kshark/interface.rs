@@ -1,6 +1,15 @@
-use super::KS_GENERIC_DATA_INTERFACE;
-use libc::{c_int, c_void};
+use libc::c_void;
 use std::ptr::null_mut;
+
+/// Data interface identifier
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub enum DataInterfaceId /* kshark_data_interface_id */ {
+    /// An interface with unknown type.
+    KS_INVALID_INTERFACE = 0,
+    /// Generic interface suitable for Ftrace data.
+    KS_GENERIC_DATA_INTERFACE = 1
+}
 
 /// Structure representing the interface of methods used to
 /// operate over the data from a given stream.
@@ -8,7 +17,7 @@ use std::ptr::null_mut;
 #[derive(Debug, Copy, Clone)]
 pub struct GenericStreamInterface /* kshark_generic_stream_interface */ {
     /// Interface version identifier.
-    pub type_: c_int,
+    pub type_: DataInterfaceId,
     /// Method used to retrieve the Process Id of the entry.
     pub get_pid: *mut c_void,
     /// Method used to retrieve the Event Id of the entry.
@@ -59,7 +68,7 @@ impl GenericStreamInterface {
 impl Default for GenericStreamInterface {
     fn default() -> Self {
         Self {
-            type_: KS_GENERIC_DATA_INTERFACE,
+            type_: DataInterfaceId::KS_GENERIC_DATA_INTERFACE,
             get_pid: null_mut::<c_void>(),
             get_event_id: null_mut::<c_void>(),
             get_event_name: null_mut::<c_void>(),

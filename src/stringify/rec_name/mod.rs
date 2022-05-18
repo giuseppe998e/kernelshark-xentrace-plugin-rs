@@ -9,7 +9,7 @@ use crate::{
 use xentrace_parser::record::{Event, EventCode};
 
 fn get_gen_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
-    match ecode.get_minor() {
+    match ecode.minor {
         0x001 => Some("lost_records"),
         0x002 => Some("wrap_buffer"),
         // 0x003 => unreachable!(), /* cpu_change */
@@ -19,7 +19,7 @@ fn get_gen_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
 }
 
 fn get_dom0op_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
-    match ecode.get_minor() {
+    match ecode.minor {
         0x001 => Some("domain_create"),
         0x002 => Some("domain_destroy"),
         _ => None,
@@ -27,7 +27,7 @@ fn get_dom0op_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
 }
 
 fn get_mem_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
-    match ecode.get_minor() {
+    match ecode.minor {
         0x001 => Some("page_grant_map"),
         0x002 => Some("page_grant_unmap"),
         0x003 => Some("page_grant_transfer"),
@@ -36,7 +36,7 @@ fn get_mem_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
 }
 
 fn get_pv_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
-    match ecode.get_minor() & 0x00F {
+    match ecode.minor & 0x00F {
         0x003 => Some("trap"),
         0x004 => Some("page_fault"),
         0x005 => Some("forced_invalid_op"),
@@ -53,7 +53,7 @@ fn get_pv_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
 }
 
 fn get_shadow_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
-    match ecode.get_minor() & 0x00F {
+    match ecode.minor & 0x00F {
         0x001 => Some("shadow_not_shadow"),
         0x002 => Some("shadow_fast_propagate"),
         0x003 => Some("shadow_fast_mmio"),
@@ -74,8 +74,8 @@ fn get_shadow_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
 }
 
 pub(crate) fn get_record_name_str(event: &Event) -> String {
-    let ecode = event.get_code();
-    let result_str = match ecode.get_main() {
+    let ecode = event.code;
+    let result_str = match ecode.main {
         TRC_GEN => get_gen_name_str(ecode),
         TRC_SCHED => get_sched_name_str(ecode),
         TRC_DOM0OP => get_dom0op_name_str(ecode),

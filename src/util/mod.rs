@@ -3,7 +3,7 @@ pub(crate) mod string;
 
 use libc::{c_long, c_ulong};
 use std::convert::TryInto;
-use xentrace_parser::{record::Record, Parser};
+use xentrace_parser::{record::Record, Trace};
 
 use crate::{
     cbind::kshark::{entry::Entry, stream::DataStream},
@@ -35,11 +35,11 @@ pub(crate) fn get_record<'a>(
     entry_ptr: *mut Entry,
 ) -> Option<&'a Record> {
     let entry = from_raw_ptr!(entry_ptr)?;
-    let parser = {
+    let trace = {
         let stream = from_raw_ptr!(stream_ptr).unwrap();
         let interface = stream.get_interface();
-        interface.get_data_handler::<Parser>()?
+        interface.get_data_handler::<Trace>()?
     };
 
-    parser.get_records().get(entry.offset as usize)
+    trace.records.get(entry.offset as usize)
 }

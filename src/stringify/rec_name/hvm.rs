@@ -1,7 +1,7 @@
 use xentrace_parser::record::EventCode;
 
 fn get_hvm_entryexit_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
-    match ecode.get_minor() {
+    match ecode.minor {
         0x001 => Some("VMENTRY"),
         0x002 | 0x102 => Some("VMEXIT"),
         0x401 => Some("nVMENTRY"),
@@ -11,7 +11,7 @@ fn get_hvm_entryexit_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
 }
 
 fn get_hvm_handler_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
-    match ecode.get_minor() {
+    match ecode.minor {
         0x001 | 0x101 => Some("PF_XEN"),
         0x002 | 0x102 => Some("PF_INJECT"),
         0x003 => Some("INJ_EXC"),
@@ -48,7 +48,7 @@ fn get_hvm_handler_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
 }
 
 fn get_hvm_emul_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
-    match ecode.get_minor() {
+    match ecode.minor {
         0x001 | 0x005 => Some("hpet"),
         0x003 | 0x007 => Some("rtc"),
         0x002 | 0x006 | 0x009 => Some("pit"),
@@ -65,7 +65,7 @@ fn get_hvm_emul_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
 }
 
 pub(super) fn get_hvm_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
-    match ecode.get_sub() {
+    match ecode.sub {
         0x1 => get_hvm_entryexit_name_str(ecode),
         0x2 => get_hvm_handler_name_str(ecode),
         0x4 => get_hvm_emul_name_str(ecode),
