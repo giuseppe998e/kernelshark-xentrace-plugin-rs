@@ -1,7 +1,7 @@
 use xentrace_parser::record::EventCode;
 
 fn get_hw_pm_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
-    match ecode.get_minor() {
+    match ecode.minor {
         0x001 => Some("cpu_freq_change"),
         0x002 => Some("cpu_idle_entry"),
         0x003 => Some("cpu_idle_exit"),
@@ -10,7 +10,7 @@ fn get_hw_pm_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
 }
 
 fn get_hw_irq_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
-    match ecode.get_minor() {
+    match ecode.minor {
         0x001 => Some("cleanup_move_delayed"),
         0x002 => Some("cleanup_move"),
         0x003 => Some("bind_vector"),
@@ -24,7 +24,7 @@ fn get_hw_irq_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
 }
 
 pub(super) fn get_hw_name_str<'a>(ecode: EventCode) -> Option<&'a str> {
-    match ecode.get_sub() {
+    match ecode.sub {
         0x1 => get_hw_pm_name_str(ecode),
         0x2 => get_hw_irq_name_str(ecode),
         _ => None,

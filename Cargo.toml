@@ -11,8 +11,8 @@ edition = "2021"
 publish = false
 
 [dependencies]
-libc = "0.2"
-xentrace-parser = "0.3"
+libc = "^0.2"
+xentrace-parser = "^0.4"
 
 [lib]
 crate-type = ["cdylib"]

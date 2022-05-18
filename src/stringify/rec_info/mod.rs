@@ -38,8 +38,8 @@ fn get_trc_guest_info_str(_event: &Event) -> Option<String> {
 }
 
 pub(crate) fn get_record_info_str(event: &Event) -> String {
-    let ecode = event.get_code();
-    let result_str = match ecode.get_main() {
+    let ecode = event.code;
+    let result_str = match ecode.main {
         TRC_GEN => get_trc_gen_info_str(&event),
         TRC_SCHED => get_trc_sched_info_str(&event),
         TRC_DOM0OP => get_trc_dom0op_info_str(&event),
@@ -55,7 +55,7 @@ pub(crate) fn get_record_info_str(event: &Event) -> String {
     match result_str {
         Some(v) => v,
         None => event
-            .get_extra()
+            .extra
             .iter()
             .map(|v| format!("{:#010X}", v))
             .collect::<Vec<String>>()
