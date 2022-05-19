@@ -29,10 +29,7 @@ use stringify::{get_record_info_str, get_record_name_str, get_record_task_str};
 mod util;
 use util::{get_record, tsc_to_ns};
 
-use xentrace_parser::{
-    record::{Domain, DomainType},
-    xentrace_parse, Trace,
-};
+use xentrace_parser::{record::DomainType, xentrace_parse, Trace};
 
 use libc::{c_char, c_int, c_short, c_uint, c_void, ssize_t};
 use std::{convert::TryInto, fs::File, io::Read, path::Path, ptr::null_mut};
@@ -50,72 +47,56 @@ fn get_pid(_stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
 fn get_event_id(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
     let record = get_record(stream_ptr, entry_ptr);
     record
-        .and_then(|r| {
-            let code = r.event.code;
-            code.into_u32().try_into().ok()
-        })
+        .and_then(|r| r.event.code.into_u32().try_into().ok())
         .unwrap_or(0)
 }
 
 fn get_event_name(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     let record = get_record(stream_ptr, entry_ptr);
-    let name_str = match record {
-        Some(r) => get_record_name_str(&r.event),
-        None => "unknown".to_string(),
-    };
+    let name_str = record
+        .map(|r| get_record_name_str(&r.event))
+        .unwrap_or_default();
 
     into_str_ptr!(name_str)
 }
 
 fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
-    let entry = from_raw_ptr!(entry_ptr);
-    let task_str = match entry {
-        Some(e) => {
-            let record = {
-                let stream = from_raw_ptr!(stream_ptr);
-                stream.and_then(|s| {
-                    let interface = s.get_interface();
-                    let trace = interface.get_data_handler::<Trace>().unwrap();
-                    trace.records.get(e.offset as usize)
-                })
-            };
-
-            match record {
-                Some(r) => get_record_task_str(&r.domain),
-                _ if e.pid != DomainType::Default.into_id().into() => {
-                    let dom = Domain::from_u32((e.pid - 1).try_into().unwrap());
-                    format!("d{}/v{}", dom.type_.into_id(), dom.vcpu)
-                }
-                _ => "default/v?".to_string(),
-            }
-        }
-        None => "unknown".to_string(),
-    };
+    let record = get_record(stream_ptr, entry_ptr);
+    let task_str = record
+        .map(|r| get_record_task_str(&r.domain))
+        .unwrap_or_default();
 
     into_str_ptr!(task_str)
 }
 
 fn get_info(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     let record = get_record(stream_ptr, entry_ptr);
-    let info_str = match record {
-        Some(r) => get_record_info_str(&r.event),
-        None => "unknown".to_string(),
-    };
+    let info_str = record
+        .map(|r| get_record_info_str(&r.event))
+        .unwrap_or_default();
 
     into_str_ptr!(info_str)
 }
 
 fn dump_entry(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     let record = get_record(stream_ptr, entry_ptr);
-    let (name_str, info_str) = match record {
-        Some(r) => (get_record_name_str(&r.event), get_record_info_str(&r.event)),
-        None => ("unknown".to_string(), "unknown".to_string()),
-    };
+    let dump_str = record
+        .map(|r| {
+            (
+                get_record_name_str(&r.event),
+                get_record_task_str(&r.domain),
+                get_record_info_str(&r.event),
+            )
+        })
+        .map(|(name_str, task_str, info_str)| {
+            format!(
+                "Record {{ Name: \"{}\", Task: \"{}\", Info: \"{}\" }}",
+                name_str, task_str, info_str
+            )
+        })
+        .unwrap_or_default();
 
-    into_str_ptr!(format!(
-        "Record {{ Name: \"{}\", Info: \"{}\" }}",
-        name_str, info_str
-    ))
+    into_str_ptr!(dump_str)
 }
 
 fn load_entries(

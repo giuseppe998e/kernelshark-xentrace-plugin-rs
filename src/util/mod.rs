@@ -22,11 +22,7 @@ pub(crate) fn tsc_to_ns(
         (cpu_hz << 10) / 1_000_000_000
     };
 
-    let tsc = match first_tsc {
-        Some(v) => (tsc - v) << 10,
-        None => tsc,
-    };
-
+    let tsc = first_tsc.map(|v| (tsc - v) << 10).unwrap_or(tsc);
     (tsc / cpu_qhz).try_into().unwrap()
 }
 
@@ -35,11 +31,9 @@ pub(crate) fn get_record<'a>(
     entry_ptr: *mut Entry,
 ) -> Option<&'a Record> {
     let entry = from_raw_ptr!(entry_ptr)?;
-    let trace = {
-        let stream = from_raw_ptr!(stream_ptr).unwrap();
-        let interface = stream.get_interface();
-        interface.get_data_handler::<Trace>()?
-    };
+    let trace = from_raw_ptr!(stream_ptr)
+        .map(|s| s.get_interface())
+        .and_then(|i| i.get_data_handler::<Trace>())?;
 
     trace.records.get(entry.offset as usize)
 }
