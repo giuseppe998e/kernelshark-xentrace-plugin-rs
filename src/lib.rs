@@ -80,7 +80,7 @@ fn get_info(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
 
 fn dump_entry(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     let record = get_record(stream_ptr, entry_ptr);
-    let (name_str, task_str, info_str) = record
+    let dump_str = record
         .map(|r| {
             (
                 get_record_name_str(&r.event),
@@ -88,12 +88,13 @@ fn dump_entry(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char
                 get_record_info_str(&r.event),
             )
         })
+        .map(|(name_str, task_str, info_str)| {
+            format!(
+                "Record {{ Name: \"{}\", Task: \"{}\", Info: \"{}\" }}",
+                name_str, task_str, info_str
+            )
+        })
         .unwrap_or_default();
-
-    let dump_str = format!(
-        "Record {{ Name: \"{}\", Task: \"{}\", Info: \"{}\" }}",
-        name_str, task_str, info_str
-    );
 
     into_str_ptr!(dump_str)
 }
