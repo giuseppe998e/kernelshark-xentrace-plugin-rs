@@ -8,7 +8,7 @@ pub enum DataInterfaceId /* kshark_data_interface_id */ {
     /// An interface with unknown type.
     InvalidInterface = 0,
     /// Generic interface suitable for Ftrace data.
-    GenericDataInterface = 1
+    GenericDataInterface = 1,
 }
 
 /// Structure representing the interface of methods used to
