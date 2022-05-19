@@ -6,9 +6,9 @@ use std::ptr::null_mut;
 #[derive(Debug, Copy, Clone)]
 pub enum DataInterfaceId /* kshark_data_interface_id */ {
     /// An interface with unknown type.
-    KS_INVALID_INTERFACE = 0,
+    InvalidInterface = 0,
     /// Generic interface suitable for Ftrace data.
-    KS_GENERIC_DATA_INTERFACE = 1
+    GenericDataInterface = 1,
 }
 
 /// Structure representing the interface of methods used to
@@ -68,7 +68,7 @@ impl GenericStreamInterface {
 impl Default for GenericStreamInterface {
     fn default() -> Self {
         Self {
-            type_: DataInterfaceId::KS_GENERIC_DATA_INTERFACE,
+            type_: DataInterfaceId::GenericDataInterface,
             get_pid: null_mut::<c_void>(),
             get_event_id: null_mut::<c_void>(),
             get_event_name: null_mut::<c_void>(),

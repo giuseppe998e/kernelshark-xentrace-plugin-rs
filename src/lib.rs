@@ -35,11 +35,7 @@ use xentrace_parser::{
 };
 
 use libc::{c_char, c_int, c_short, c_uint, c_void, ssize_t};
-use std::{alloc::System, convert::TryInto, fs::File, io::Read, path::Path, ptr::null_mut};
-
-// Use System allocator
-//#[global_allocator]
-//static A: System = System;
+use std::{convert::TryInto, fs::File, io::Read, path::Path, ptr::null_mut};
 
 static KSHARK_SOURCE_TYPE: &str = "xentrace_bin";
 
@@ -112,10 +108,7 @@ fn get_info(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
 fn dump_entry(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     let record = get_record(stream_ptr, entry_ptr);
     let (name_str, info_str) = match record {
-        Some(r) => (
-            get_record_name_str(&r.event),
-            get_record_info_str(&r.event),
-        ),
+        Some(r) => (get_record_name_str(&r.event), get_record_info_str(&r.event)),
         None => ("unknown".to_owned(), "unknown".to_owned()),
     };
 
@@ -150,12 +143,7 @@ fn load_entries(
                 entry.stream_id = stream.stream_id;
                 entry.cpu = r.cpu.try_into().unwrap_or(c_short::MAX);
                 entry.ts = tsc_to_ns(r.event.tsc, first_tsc, None);
-                entry.event_id = r
-                    .event
-                    .code
-                    .into_u32()
-                    .try_into()
-                    .unwrap_or(c_short::MAX);
+                entry.event_id = r.event.code.into_u32().try_into().unwrap_or(c_short::MAX);
 
                 let dom = r.domain;
                 entry.pid = match dom.type_ {
@@ -177,11 +165,7 @@ fn load_entries(
         *rows_ptr = Box::into_raw(rows.into_boxed_slice()) as _;
     }
 
-    trace
-        .records
-        .len()
-        .try_into()
-        .unwrap_or(ssize_t::MAX)
+    trace.records.len().try_into().unwrap_or(ssize_t::MAX)
 }
 
 // KSHARK_INPUT_CHECK @ libkshark-plugin.h
