@@ -54,13 +54,12 @@ pub(crate) fn get_record_info_str(event: &Event) -> String {
 
     match result_str {
         Some(v) => v.to_string(),
-        None => match event.extra.as_ref() {
-            Some(v) => v
-                .iter()
-                .map(|v| format!("0x{:08X}", v))
-                .collect::<Vec<_>>()
-                .join(", "),
-            None => "".to_string(),
-        },
+        None => event
+            .extra
+            .iter()
+            .filter(|&o| o.is_some())
+            .map(|v| format!("0x{:08X}", v.unwrap()))
+            .collect::<Vec<_>>()
+            .join(", "),
     }
 }
