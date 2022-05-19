@@ -10,7 +10,7 @@ pub(crate) fn get_record_task_str(domain: &Domain) -> String {
     match domain.type_ {
         DomainType::Zero => format!("host/v{}", domain.vcpu),
         DomainType::Idle => format!("idle/v{}", domain.vcpu),
-        DomainType::Default => "default/v?".to_owned(),
+        DomainType::Default => "default/v?".to_string(),
         DomainType::Guest(d) => format!("d{}/v{}", d, domain.vcpu),
     }
 }

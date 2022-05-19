@@ -61,7 +61,7 @@ fn get_event_name(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_
     let record = get_record(stream_ptr, entry_ptr);
     let name_str = match record {
         Some(r) => get_record_name_str(&r.event),
-        None => "unknown".to_owned(),
+        None => "unknown".to_string(),
     };
 
     into_str_ptr!(name_str)
@@ -86,10 +86,10 @@ fn get_task(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
                     let dom = Domain::from_u32((e.pid - 1).try_into().unwrap());
                     format!("d{}/v{}", dom.type_.into_id(), dom.vcpu)
                 }
-                _ => "default/v?".to_owned(),
+                _ => "default/v?".to_string(),
             }
         }
-        None => "unknown".to_owned(),
+        None => "unknown".to_string(),
     };
 
     into_str_ptr!(task_str)
@@ -99,7 +99,7 @@ fn get_info(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char {
     let record = get_record(stream_ptr, entry_ptr);
     let info_str = match record {
         Some(r) => get_record_info_str(&r.event),
-        None => "unknown".to_owned(),
+        None => "unknown".to_string(),
     };
 
     into_str_ptr!(info_str)
@@ -109,7 +109,7 @@ fn dump_entry(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> *mut c_char
     let record = get_record(stream_ptr, entry_ptr);
     let (name_str, info_str) = match record {
         Some(r) => (get_record_name_str(&r.event), get_record_info_str(&r.event)),
-        None => ("unknown".to_owned(), "unknown".to_owned()),
+        None => ("unknown".to_string(), "unknown".to_string()),
     };
 
     into_str_ptr!(format!(

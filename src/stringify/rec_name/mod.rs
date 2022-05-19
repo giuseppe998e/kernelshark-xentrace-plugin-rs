@@ -89,7 +89,7 @@ pub(crate) fn get_record_name_str(event: &Event) -> String {
     };
 
     match result_str {
-        Some(v) => v.to_owned(),
-        None => format!("unknown ({:#010X})", ecode.into_u32()),
+        Some(v) => v.to_string(),
+        None => format!("unknown (0x{:08X})", ecode.into_u32()),
     }
 }
