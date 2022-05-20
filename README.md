@@ -20,8 +20,9 @@
 ### Testing/Development
 
 ```shell
-$ git clone --recurse-submodules https://github.com/giuseppe998e/kernelshark-xentrace-plugin-rs.git
+$ git clone https://github.com/giuseppe998e/kernelshark-xentrace-plugin-rs.git
 $ cd kernelshark-xentrace-plugin-rs/
+$ git checkout develop #opt
 $ cargo build
 ```
 
@@ -30,8 +31,8 @@ You can find the plugin file into `target/debug/libkernelshark_xentrace_plugin.s
 ### Optimized for usage
 
 ```shell
-$ git clone --recurse-submodules https://github.com/giuseppe998e/kernelshark-xentrace-plugin-rs.git
-$ cd kernelshark-xentrace-plugin/
+$ git clone https://github.com/giuseppe998e/kernelshark-xentrace-plugin-rs.git
+$ cd kernelshark-xentrace-plugin-rs/
 $ cargo build --release
 ```
 
