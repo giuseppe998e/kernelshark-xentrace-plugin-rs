@@ -1,6 +1,6 @@
 use super::{interface::GenericStreamInterface, KS_DATA_FORMAT_SIZE};
 use crate::from_str_ptr;
-use libc::{c_char, c_int, c_long, c_short, c_uint, c_void, size_t};
+use libc::{c_char, c_int, c_long, c_short, c_void, size_t};
 use std::ptr::null_mut;
 
 extern "C" {
@@ -31,7 +31,7 @@ pub struct DataStream /* kshark_data_stream */ {
     /// Hash table of task PIDs.
     pub tasks: *mut c_void, // XXX NOT IMPL - kshark_hash_id
     /// A mutex, used to protect the access to the input file.
-    pub input_mutex: PthreadMutexU,
+    pub _input_mutex_padding: [c_char; 40usize], // XXX NOT IMPL - PthreadMutexU
     /// Hash of tasks to filter on.
     pub show_task_filter: *mut c_void, // XXX NOT IMPL - kshark_hash_id
     /// Hash of tasks to not display.
@@ -74,7 +74,7 @@ impl DataStream {
     }
 
     pub fn get_file_path(&self) -> &str {
-        from_str_ptr!(self.file).unwrap_or_default()
+        from_str_ptr!(self.file).unwrap()
     }
 
     pub fn get_interface(&self) -> &GenericStreamInterface {
@@ -97,7 +97,7 @@ impl Default for DataStream {
             file: null_mut::<c_char>(),
             name: null_mut::<c_char>(),
             tasks: null_mut::<c_void>(),
-            input_mutex: PthreadMutexU { align: 0 },
+            _input_mutex_padding: [0; 40usize],
             show_task_filter: null_mut::<c_void>(),
             hide_task_filter: null_mut::<c_void>(),
             show_event_filter: null_mut::<c_void>(),
@@ -116,42 +116,4 @@ impl Default for DataStream {
             interface: null_mut::<GenericStreamInterface>(),
         }
     }
-}
-
-// Required structs from pthread.h
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct PthreadInternalList {
-    pub prev: *mut PthreadInternalList,
-    pub next: *mut PthreadInternalList,
-}
-
-impl Default for PthreadInternalList {
-    fn default() -> Self {
-        Self {
-            prev: null_mut::<PthreadInternalList>(),
-            next: null_mut::<PthreadInternalList>(),
-        }
-    }
-}
-
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone)]
-pub struct PthreadMutexS {
-    pub lock: c_int,
-    pub count: c_uint,
-    pub owner: c_int,
-    pub nusers: c_uint,
-    pub kind: c_int,
-    pub spins: c_short,
-    pub elision: c_short,
-    pub list: PthreadInternalList,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub union PthreadMutexU {
-    pub data: PthreadMutexS,
-    pub size: [c_char; 40usize],
-    pub align: c_long,
 }
