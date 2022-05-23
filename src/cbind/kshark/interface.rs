@@ -56,7 +56,7 @@ pub struct GenericStreamInterface /* kshark_generic_stream_interface */ {
 
 impl GenericStreamInterface {
     pub fn new_boxed() -> Box<Self> {
-        Box::new(GenericStreamInterface::default())
+        Box::<Self>::default()
     }
 
     pub fn get_data_handler<T>(&self) -> Option<&T> {
