@@ -100,12 +100,11 @@ pub(crate) fn load_entries(
                 entry.ts = tsc_to_ns(r.event.tsc, first_tsc, None);
                 entry.event_id = r.event.code.into_u32().try_into().unwrap_or(c_short::MAX);
 
-                let dom = r.domain;
-                entry.pid = match dom.type_ {
+                entry.pid = match r.domain.type_ {
                     DomainType::Idle => 0,
                     DomainType::Default => default_domid,
                     _ => {
-                        let task_id = (dom.into_u32() + 1).try_into().unwrap_or(c_int::MAX);
+                        let task_id = (r.domain.into_u32() + 1).try_into().unwrap_or(c_int::MAX);
                         stream.add_task_id(task_id);
                         task_id
                     }
