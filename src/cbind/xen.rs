@@ -1,6 +1,6 @@
 use libc::c_ushort;
 
-// Constants from "include/public/trace.h"
+// Constants
 pub(crate) const TRC_GEN: c_ushort = 0x0001; // General trace
 pub(crate) const TRC_SCHED: c_ushort = 0x0002; // Xen Scheduler trace
 pub(crate) const TRC_DOM0OP: c_ushort = 0x0004; // Xen DOM0 operation trace

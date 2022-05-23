@@ -81,7 +81,7 @@ impl DataStream {
         unsafe { self.interface.as_ref().unwrap() }
     }
 
-    pub fn get_mut_interface(&self) -> &mut GenericStreamInterface {
+    pub fn get_mut_interface(&mut self) -> &mut GenericStreamInterface {
         unsafe { self.interface.as_mut().unwrap() }
     }
 }

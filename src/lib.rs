@@ -88,7 +88,7 @@ pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int
 // KSHARK_INPUT_DEINITIALIZER @ libkshark-plugin.h
 #[no_mangle]
 pub extern "C" fn kshark_input_deinitializer(stream_ptr: *mut DataStream) {
-    let stream = from_raw_ptr!(stream_ptr).unwrap();
+    let stream = from_raw_ptr_mut!(stream_ptr).unwrap();
     let interface = stream.get_mut_interface();
     let trace = unsafe { Box::<Trace>::from_raw(interface.handle as _) };
 
