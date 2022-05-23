@@ -97,7 +97,7 @@ impl Default for DataStream {
             file: null_mut::<c_char>(),
             name: null_mut::<c_char>(),
             tasks: null_mut::<c_void>(),
-            input_mutex: PthreadMutexU { align: 0 },
+            input_mutex: PthreadMutexU::default(),
             show_task_filter: null_mut::<c_void>(),
             hide_task_filter: null_mut::<c_void>(),
             show_event_filter: null_mut::<c_void>(),
@@ -154,4 +154,12 @@ pub union PthreadMutexU {
     pub data: PthreadMutexS,
     pub size: [c_char; 40usize],
     pub align: c_long,
+}
+
+impl Default for PthreadMutexU {
+    fn default() -> Self {
+        Self {
+            align: 0
+        }
+    }
 }
