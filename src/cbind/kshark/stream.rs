@@ -74,7 +74,7 @@ impl DataStream {
     }
 
     pub fn get_file_path(&self) -> &str {
-        from_str_ptr!(self.file).unwrap_or_default()
+        from_str_ptr!(self.file).unwrap()
     }
 
     pub fn get_interface(&self) -> &GenericStreamInterface {
