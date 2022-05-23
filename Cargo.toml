@@ -12,7 +12,7 @@ publish = false
 
 [dependencies]
 libc = "^0.2"
-xentrace-parser = "^0.6"
+xentrace-parser = "^0.7"
 
 [lib]
 crate-type = ["cdylib"]

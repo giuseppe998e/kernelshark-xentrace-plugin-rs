@@ -84,7 +84,7 @@ pub(crate) fn load_entries(
     let rows: Vec<*mut Entry> = {
         let first_tsc = trace.records.get(0).map(|r| r.event.tsc);
 
-        let default_domid = DomainType::Default.into_id().into();
+        let default_domid = DomainType::Default.into();
         stream.add_task_id(default_domid);
 
         trace
