@@ -65,7 +65,7 @@ pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int
 
     stream.idle_pid = 0;
     stream.n_cpus = trace.cpu_count().into();
-    stream.n_events = trace.records.len().try_into().unwrap_or(c_int::MAX);
+    stream.n_events = trace.record_count().try_into().unwrap_or(c_int::MAX);
 
     stream.interface = {
         let mut interface = GenericStreamInterface::new_boxed();

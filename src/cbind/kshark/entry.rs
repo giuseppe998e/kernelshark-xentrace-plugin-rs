@@ -34,7 +34,7 @@ pub struct Entry /* kshark_entry */ {
 
 impl Entry {
     pub fn new_boxed() -> Box<Self> {
-        Box::new(Entry::default())
+        Box::<Entry>::default()
     }
 }
 

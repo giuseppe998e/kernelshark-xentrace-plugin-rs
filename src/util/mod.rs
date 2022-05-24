@@ -35,5 +35,5 @@ pub(crate) fn get_record<'a>(
         .map(|s| s.get_interface())
         .and_then(|i| i.get_data_handler::<Trace>())?;
 
-    trace.records.get(entry.offset as usize)
+    trace.get(entry.offset as usize)
 }
