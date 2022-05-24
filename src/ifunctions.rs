@@ -19,7 +19,7 @@ pub(crate) fn get_pid(_stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_
 pub(crate) fn get_event_id(stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
     let record = get_record(stream_ptr, entry_ptr);
     record
-        .and_then(|r| r.event.code.into_u32().try_into().ok())
+        .and_then(|r| u32::from(r.event.code).try_into().ok())
         .unwrap_or(0)
 }
 
@@ -96,13 +96,13 @@ pub(crate) fn load_entries(
                 entry.stream_id = stream.stream_id;
                 entry.cpu = r.cpu.try_into().unwrap_or(c_short::MAX);
                 entry.ts = tsc_to_ns(r.event.tsc, first_tsc, None);
-                entry.event_id = r.event.code.into_u32().try_into().unwrap_or(c_short::MAX);
+                entry.event_id = u32::from(r.event.code).try_into().unwrap_or(c_short::MAX);
 
                 entry.pid = match r.domain.type_ {
                     DomainType::Idle => 0,
                     DomainType::Default => default_domid,
                     _ => {
-                        let task_id = (r.domain.into_u32() + 1).try_into().unwrap_or(c_int::MAX);
+                        let task_id = (u32::from(r.domain) + 1).try_into().unwrap_or(c_int::MAX);
                         stream.add_task_id(task_id);
                         task_id
                     }
