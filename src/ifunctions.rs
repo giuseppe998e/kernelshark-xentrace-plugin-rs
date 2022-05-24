@@ -80,13 +80,12 @@ pub(crate) fn load_entries(
     let trace = stream.get_interface().get_data_handler::<Trace>().unwrap();
 
     let rows: Vec<*mut Entry> = {
-        let first_tsc = trace.records.get(0).map(|r| r.event.tsc);
+        let first_tsc = trace.get(0).map(|r| r.event.tsc);
 
         let default_domid = DomainType::Default.into();
         stream.add_task_id(default_domid);
 
         trace
-            .records
             .iter()
             .zip(0..)
             .map(|(r, i)| {
@@ -117,5 +116,5 @@ pub(crate) fn load_entries(
         *rows_ptr = Box::into_raw(rows.into_boxed_slice()) as _;
     }
 
-    trace.records.len().try_into().unwrap_or(ssize_t::MAX)
+    trace.record_count().try_into().unwrap_or(ssize_t::MAX)
 }
