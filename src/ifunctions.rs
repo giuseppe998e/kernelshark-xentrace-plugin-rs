@@ -89,7 +89,7 @@ pub(crate) fn load_entries(
             .iter()
             .zip(0..)
             .map(|(r, i)| {
-                let mut entry = Entry::new_boxed();
+                let mut entry = Entry::boxed();
 
                 entry.offset = i;
                 entry.stream_id = stream.stream_id;
