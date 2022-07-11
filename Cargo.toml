@@ -25,3 +25,4 @@ inherits = "release"
 codegen-units = 1
 panic = "abort"
 strip = true # rust 1.59+
+lto = true
