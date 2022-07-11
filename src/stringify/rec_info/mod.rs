@@ -1,5 +1,6 @@
-use crate::cbind::xen::*;
 use xentrace_parser::record::Event;
+
+use crate::cbind::xen::*;
 
 fn get_trc_gen_info_str<'a>(_event: &Event) -> Option<&'a str> {
     None

@@ -1,12 +1,13 @@
-mod hvm;
-mod hw;
-mod sched;
+use xentrace_parser::record::{Event, EventCode};
 
 use crate::{
     cbind::xen::*,
     stringify::rec_name::{hvm::get_hvm_name_str, hw::get_hw_name_str, sched::get_sched_name_str},
 };
-use xentrace_parser::record::{Event, EventCode};
+
+mod hvm;
+mod hw;
+mod sched;
 
 fn get_gen_name_str<'a>(ecode: &EventCode) -> Option<&'a str> {
     match ecode.minor() {

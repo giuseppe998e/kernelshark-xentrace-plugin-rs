@@ -17,6 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
  * USA
  */
+use libc::{c_char, c_int, c_uint, c_void};
+use std::{convert::TryInto, fs::File, io::Read, path::Path, ptr::null_mut};
+use xentrace_parser::{xentrace_parse, Trace};
+
 mod cbind;
 use cbind::kshark::{interface::GenericStreamInterface, stream::DataStream};
 
@@ -25,11 +29,6 @@ mod util;
 
 mod ifunctions;
 use ifunctions::*;
-
-use xentrace_parser::{xentrace_parse, Trace};
-
-use libc::{c_char, c_int, c_uint, c_void};
-use std::{convert::TryInto, fs::File, io::Read, path::Path, ptr::null_mut};
 
 static KSHARK_SOURCE_TYPE: &str = "xentrace_bin";
 
