@@ -87,11 +87,11 @@ pub(crate) fn load_entries(
 
         trace
             .iter()
-            .enumerate()
-            .map(|(i, r)| {
+            .zip(0..)
+            .map(|(r, i)| {
                 let mut entry = Entry::boxed();
 
-                entry.offset = i.try_into().unwrap_or(i64::MAX);
+                entry.offset = i;
                 entry.stream_id = stream.stream_id;
                 entry.cpu = r.cpu().try_into().unwrap_or(c_short::MAX);
                 entry.ts = tsc_to_ns(r.event().tsc(), first_tsc, None);
