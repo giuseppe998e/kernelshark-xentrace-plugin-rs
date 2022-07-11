@@ -18,7 +18,10 @@ crate-type = ["cdylib"]
 libc = "^0.2"
 xentrace-parser = "^0.10"
 
-# These optimizations could save a few kb (~50kb).
-#[profile.release]
-#codegen-units = 1
-#panic = "abort"
+# These optimizations could save a few kb (~100kb).
+# With `cargo build --profile release-minify`
+[profile.release-minify]
+inherits = "release"
+codegen-units = 1
+panic = "abort"
+strip = true # rust 1.59+
