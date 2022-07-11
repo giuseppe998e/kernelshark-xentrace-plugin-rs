@@ -1,12 +1,12 @@
+use libc::{c_char, c_int, c_short, c_void, ssize_t};
+use xentrace_parser::{record::DomainKind, Trace};
+
 use crate::{
     cbind::kshark::{entry::Entry, stream::DataStream, KS_EMPTY_BIN, KS_PLUGIN_UNTOUCHED_MASK},
     from_raw_ptr, into_str_ptr,
     stringify::{get_record_info_str, get_record_name_str, get_record_task_str},
     util::{get_record, tsc_to_ns},
 };
-
-use libc::{c_char, c_int, c_short, c_void, ssize_t};
-use xentrace_parser::{record::DomainKind, Trace};
 
 pub(crate) fn get_pid(_stream_ptr: *mut DataStream, entry_ptr: *mut Entry) -> c_int {
     let entry = from_raw_ptr!(entry_ptr);
@@ -87,21 +87,25 @@ pub(crate) fn load_entries(
 
         trace
             .iter()
-            .zip(0..)
-            .map(|(r, i)| {
+            .enumerate()
+            .map(|(i, r)| {
                 let mut entry = Entry::boxed();
 
-                entry.offset = i;
+                entry.offset = i.try_into().unwrap_or(i64::MAX);
                 entry.stream_id = stream.stream_id;
                 entry.cpu = r.cpu().try_into().unwrap_or(c_short::MAX);
                 entry.ts = tsc_to_ns(r.event().tsc(), first_tsc, None);
-                entry.event_id = u32::from(r.event().code()).try_into().unwrap_or(c_short::MAX);
+                entry.event_id = u32::from(r.event().code())
+                    .try_into()
+                    .unwrap_or(c_short::MAX);
 
                 entry.pid = match r.domain().kind() {
                     DomainKind::Idle => 0,
                     DomainKind::Default => default_domid,
                     _ => {
-                        let task_id = (u32::from(*r.domain()) + 1).try_into().unwrap_or(c_int::MAX);
+                        let task_id = (u32::from(*r.domain()) + 1)
+                            .try_into()
+                            .unwrap_or(c_int::MAX);
                         stream.add_task_id(task_id);
                         task_id
                     }

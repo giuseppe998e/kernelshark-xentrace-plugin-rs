@@ -1,7 +1,8 @@
-use super::{interface::GenericStreamInterface, KS_DATA_FORMAT_SIZE};
-use crate::from_str_ptr;
 use libc::{c_char, c_int, c_long, c_short, c_void, size_t};
 use std::ptr::null_mut;
+
+use super::{interface::GenericStreamInterface, KS_DATA_FORMAT_SIZE};
+use crate::from_str_ptr;
 
 extern "C" {
     fn kshark_hash_id_add(
