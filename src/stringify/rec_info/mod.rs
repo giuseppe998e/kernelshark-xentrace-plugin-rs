@@ -2,39 +2,39 @@ use xentrace_parser::record::Event;
 
 use crate::cbind::xen::*;
 
-fn get_trc_gen_info_str<'a>(_event: &Event) -> Option<&'a str> {
+fn get_trc_gen_info_str(_event: &Event) -> Option<String> {
     None
 }
 
-fn get_trc_sched_info_str<'a>(_event: &Event) -> Option<&'a str> {
+fn get_trc_sched_info_str(_event: &Event) -> Option<String> {
     None
 }
 
-fn get_trc_dom0op_info_str<'a>(_event: &Event) -> Option<&'a str> {
+fn get_trc_dom0op_info_str(_event: &Event) -> Option<String> {
     None
 }
 
-fn get_trc_hvm_info_str<'a>(_event: &Event) -> Option<&'a str> {
+fn get_trc_hvm_info_str(_event: &Event) -> Option<String> {
     None
 }
 
-fn get_trc_mem_info_str<'a>(_event: &Event) -> Option<&'a str> {
+fn get_trc_mem_info_str(_event: &Event) -> Option<String> {
     None
 }
 
-fn get_trc_pv_info_str<'a>(_event: &Event) -> Option<&'a str> {
+fn get_trc_pv_info_str(_event: &Event) -> Option<String> {
     None
 }
 
-fn get_trc_shadow_info_str<'a>(_event: &Event) -> Option<&'a str> {
+fn get_trc_shadow_info_str(_event: &Event) -> Option<String> {
     None
 }
 
-fn get_trc_hw_info_str<'a>(_event: &Event) -> Option<&'a str> {
+fn get_trc_hw_info_str(_event: &Event) -> Option<String> {
     None
 }
 
-fn get_trc_guest_info_str(_event: &Event) -> Option<&str> {
+fn get_trc_guest_info_str(_event: &Event) -> Option<String> {
     None
 }
 
@@ -54,7 +54,7 @@ pub(crate) fn get_record_info_str(event: &Event) -> String {
     };
 
     match result_str {
-        Some(v) => v.to_string(),
+        Some(v) => v,
         None => event
             .extra()
             .iter()
