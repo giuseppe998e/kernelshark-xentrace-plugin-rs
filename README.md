@@ -15,7 +15,7 @@
 
 ### Dependencies
 
-- `cargo` (v1.55.0+)
+- `rust` (v1.56.1+)
 
 ### Testing/Development
 
