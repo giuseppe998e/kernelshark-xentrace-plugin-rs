@@ -70,18 +70,22 @@ pub struct DataStream /* kshark_data_stream */ {
 }
 
 impl DataStream {
+    #[inline]
     pub fn add_task_id(&self, id: c_int) -> c_int {
         unsafe { kshark_hash_id_add(self.tasks, id) }
     }
 
+    #[inline]
     pub fn get_file_path(&self) -> &str {
         from_str_ptr!(self.file).unwrap()
     }
 
+    #[inline]
     pub fn get_interface(&self) -> &GenericStreamInterface {
         unsafe { self.interface.as_ref().unwrap() }
     }
 
+    #[inline]
     pub fn get_mut_interface(&mut self) -> &mut GenericStreamInterface {
         unsafe { self.interface.as_mut().unwrap() }
     }

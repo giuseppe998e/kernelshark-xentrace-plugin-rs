@@ -55,10 +55,12 @@ pub struct GenericStreamInterface /* kshark_generic_stream_interface */ {
 }
 
 impl GenericStreamInterface {
+    #[inline]
     pub fn boxed() -> Box<Self> {
         Box::<Self>::default()
     }
 
+    #[inline]
     pub fn get_data_handler<T>(&self) -> Option<&T> {
         let handle = self.handle as *mut T;
         unsafe { handle.as_ref() }
