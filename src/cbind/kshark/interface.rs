@@ -17,7 +17,7 @@ pub enum DataInterfaceId /* kshark_data_interface_id */ {
 #[derive(Debug, Copy, Clone)]
 pub struct GenericStreamInterface /* kshark_generic_stream_interface */ {
     /// Interface version identifier.
-    pub type_: DataInterfaceId,
+    pub interface_id: DataInterfaceId,
     /// Method used to retrieve the Process Id of the entry.
     pub get_pid: *mut c_void,
     /// Method used to retrieve the Event Id of the entry.
@@ -68,7 +68,7 @@ impl GenericStreamInterface {
 impl Default for GenericStreamInterface {
     fn default() -> Self {
         Self {
-            type_: DataInterfaceId::GenericDataInterface,
+            interface_id: DataInterfaceId::GenericDataInterface,
             get_pid: null_mut::<c_void>(),
             get_event_id: null_mut::<c_void>(),
             get_event_name: null_mut::<c_void>(),

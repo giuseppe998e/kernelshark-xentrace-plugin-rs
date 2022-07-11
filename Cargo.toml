@@ -7,12 +7,13 @@ readme = "README.md"
 license = "LGPL-2.1-or-later"
 keywords = ["xen", "xentrace", "kenelshark", "ks", "trace", "plugin", "ffi"]
 repository = "https://github.com/giuseppe998e/kernelshark-xentrace-plugin-rs/"
+rust-version = "1.56.1"
 edition = "2021"
 publish = false
 
 [dependencies]
 libc = "^0.2"
-xentrace-parser = "^0.9"
+xentrace-parser = "^0.10"
 
 [lib]
 crate-type = ["cdylib"]
