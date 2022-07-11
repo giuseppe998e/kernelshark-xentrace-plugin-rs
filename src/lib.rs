@@ -37,7 +37,8 @@ static KSHARK_SOURCE_TYPE: &str = "xentrace_bin";
 #[no_mangle]
 pub extern "C" fn kshark_input_check(file_ptr: *mut c_char, _frmt: *mut *mut c_char) -> bool {
     if let Ok(fstr) = from_str_ptr!(file_ptr) {
-        if let Ok(mut file) = File::open(Path::new(fstr)) {
+        let path = Path::new(fstr);
+        if let Ok(mut file) = File::open(path) {
             let ecode = {
                 let mut buf = [0u8; 4];
                 let _ = file.read_exact(&mut buf);
@@ -68,7 +69,7 @@ pub extern "C" fn kshark_input_initializer(stream_ptr: *mut DataStream) -> c_int
     stream.n_events = trace.record_count().try_into().unwrap_or(c_int::MAX);
 
     stream.interface = {
-        let mut interface = GenericStreamInterface::new_boxed();
+        let mut interface = GenericStreamInterface::boxed();
 
         interface.get_pid = get_pid as _;
         interface.get_event_id = get_event_id as _;

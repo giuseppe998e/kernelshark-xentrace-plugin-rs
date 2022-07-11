@@ -1,7 +1,7 @@
 use xentrace_parser::record::EventCode;
 
 fn get_sched_min_name_str<'a>(ecode: &EventCode) -> Option<&'a str> {
-    match ecode.minor {
+    match ecode.minor() {
         0x002 => Some("continue_running"),
         0x011 => Some("running_to_runnable"),
         0x021 => Some("running_to_blocked"),
@@ -20,7 +20,7 @@ fn get_sched_min_name_str<'a>(ecode: &EventCode) -> Option<&'a str> {
 }
 
 fn get_sched_class_name_str<'a>(ecode: &EventCode) -> Option<&'a str> {
-    match ecode.minor {
+    match ecode.minor() {
         0x001 => Some("csched:sched_tasklet"),
         0x002 => Some("csched:account_start"),
         0x003 => Some("csched:account_stop"),
@@ -74,7 +74,7 @@ fn get_sched_class_name_str<'a>(ecode: &EventCode) -> Option<&'a str> {
 }
 
 fn get_sched_verbose_name_str<'a>(ecode: &EventCode) -> Option<&'a str> {
-    match ecode.minor {
+    match ecode.minor() {
         0x001 => Some("sched_add_domain"),
         0x002 => Some("sched_rem_domain"),
         0x003 => Some("domain_sleep"),
@@ -97,7 +97,7 @@ fn get_sched_verbose_name_str<'a>(ecode: &EventCode) -> Option<&'a str> {
 }
 
 pub(super) fn get_sched_name_str<'a>(ecode: &EventCode) -> Option<&'a str> {
-    match ecode.sub {
+    match ecode.sub() {
         0x1 => get_sched_min_name_str(ecode),
         0x2 => get_sched_class_name_str(ecode),
         0x8 => get_sched_verbose_name_str(ecode),
