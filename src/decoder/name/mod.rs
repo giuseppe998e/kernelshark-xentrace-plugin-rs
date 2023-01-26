@@ -1,15 +1,12 @@
-use xentrace_parser::record::{Event, EventCode};
-
-use crate::{
-    cbind::xen::*,
-    stringify::rec_name::{hvm::get_hvm_name_str, hw::get_hw_name_str, sched::get_sched_name_str},
-};
-
 mod hvm;
 mod hw;
 mod sched;
 
-fn get_gen_name_str<'a>(ecode: &EventCode) -> Option<&'a str> {
+use self::{hvm::get_hvm_name, hw::get_hw_name, sched::get_sched_name};
+use crate::ffi::xen::trace::*;
+use xentrace_parser::record::{Event, EventCode};
+
+fn get_gen_name(ecode: &EventCode) -> Option<&str> {
     match ecode.minor() {
         0x001 => Some("lost_records"),
         0x002 => Some("wrap_buffer"),
@@ -19,7 +16,7 @@ fn get_gen_name_str<'a>(ecode: &EventCode) -> Option<&'a str> {
     }
 }
 
-fn get_dom0op_name_str<'a>(ecode: &EventCode) -> Option<&'a str> {
+fn get_dom0op_name(ecode: &EventCode) -> Option<&str> {
     match ecode.minor() {
         0x001 => Some("domain_create"),
         0x002 => Some("domain_destroy"),
@@ -27,7 +24,7 @@ fn get_dom0op_name_str<'a>(ecode: &EventCode) -> Option<&'a str> {
     }
 }
 
-fn get_mem_name_str<'a>(ecode: &EventCode) -> Option<&'a str> {
+fn get_mem_name(ecode: &EventCode) -> Option<&str> {
     match ecode.minor() {
         0x001 => Some("page_grant_map"),
         0x002 => Some("page_grant_unmap"),
@@ -36,7 +33,7 @@ fn get_mem_name_str<'a>(ecode: &EventCode) -> Option<&'a str> {
     }
 }
 
-fn get_pv_name_str<'a>(ecode: &EventCode) -> Option<&'a str> {
+fn get_pv_name(ecode: &EventCode) -> Option<&str> {
     match ecode.minor() & 0x00F {
         0x003 => Some("trap"),
         0x004 => Some("page_fault"),
@@ -53,7 +50,7 @@ fn get_pv_name_str<'a>(ecode: &EventCode) -> Option<&'a str> {
     }
 }
 
-fn get_shadow_name_str<'a>(ecode: &EventCode) -> Option<&'a str> {
+fn get_shadow_name(ecode: &EventCode) -> Option<&str> {
     match ecode.minor() & 0x00F {
         0x001 => Some("shadow_not_shadow"),
         0x002 => Some("shadow_fast_propagate"),
@@ -74,23 +71,23 @@ fn get_shadow_name_str<'a>(ecode: &EventCode) -> Option<&'a str> {
     }
 }
 
-pub(crate) fn get_record_name_str(event: &Event) -> String {
+pub(crate) fn get_record_name(event: &Event) -> String {
     let ecode = event.code();
-    let result_str = match ecode.main() {
-        TRC_GEN => get_gen_name_str(&ecode),
-        TRC_SCHED => get_sched_name_str(&ecode),
-        TRC_DOM0OP => get_dom0op_name_str(&ecode),
-        TRC_HVM => get_hvm_name_str(&ecode),
-        TRC_MEM => get_mem_name_str(&ecode),
-        TRC_PV => get_pv_name_str(&ecode),
-        TRC_SHADOW => get_shadow_name_str(&ecode),
-        TRC_HW => get_hw_name_str(&ecode),
+    let string_opt = match ecode.main() {
+        TRC_GEN => get_gen_name(&ecode),
+        TRC_SCHED => get_sched_name(&ecode),
+        TRC_DOM0OP => get_dom0op_name(&ecode),
+        TRC_HVM => get_hvm_name(&ecode),
+        TRC_MEM => get_mem_name(&ecode),
+        TRC_PV => get_pv_name(&ecode),
+        TRC_SHADOW => get_shadow_name(&ecode),
+        TRC_HW => get_hw_name(&ecode),
         TRC_GUEST => Some("TRC_GUEST"),
         _ => None,
     };
 
-    match result_str {
-        Some(v) => v.to_string(),
+    match string_opt {
+        Some(val) => val.to_string(),
         None => format!("unknown (0x{:08X})", u32::from(ecode)),
     }
 }

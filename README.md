@@ -41,10 +41,11 @@ You can find the plugin file into `target/release/libkernelshark_xentrace_plugin
 ## Usage
 
 ```shell
+$ export XENTRACE_CPUHZ=3.6G # Sets the CPU speed used (in (G)hz / (M)hz / (K)hz / hz )
 $ kernelshark -p libkernelshark_xentrace_plugin.so trace.xen
 ```
 
-**N.B.** The plugin uses a predefined value of `2,4G` for the CPU speed (**WIP**).
+**N.B.** The plugin uses a predefined value of `2.4G` as CPU frequency.
 
 ## License
 
