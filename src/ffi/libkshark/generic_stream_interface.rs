@@ -1,5 +1,6 @@
-use libc::c_void;
 use std::ptr::null_mut;
+
+use libc::c_void;
 
 /// Data interface identifier
 #[repr(C)]
@@ -87,11 +88,12 @@ impl Default for GenericStreamInterface {
 
 #[cfg(test)]
 mod test {
-    use super::GenericStreamInterface;
     use std::{
         mem::{align_of, size_of, MaybeUninit},
         ptr::addr_of,
     };
+
+    use super::GenericStreamInterface;
 
     #[test]
     fn bindgen_layout() {

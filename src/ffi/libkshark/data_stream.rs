@@ -1,7 +1,9 @@
+use std::ptr::null_mut;
+
+use libc::{c_char, c_int, c_long, c_short, c_void, size_t};
+
 use super::GenericStreamInterface;
 use crate::{ffi::libkshark_plugin::KS_DATA_FORMAT_SIZE, str_from_ptr};
-use libc::{c_char, c_int, c_long, c_short, c_void, size_t};
-use std::ptr::null_mut;
 
 const __SIZEOF_PTHREAD_MUTEX_T: usize = 40;
 

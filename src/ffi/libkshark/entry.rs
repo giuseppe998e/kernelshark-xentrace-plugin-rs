@@ -1,5 +1,6 @@
-use libc::{c_int, c_long, c_short, c_ushort};
 use std::ptr::null_mut;
+
+use libc::{c_int, c_long, c_short, c_ushort};
 
 /// Kernel Shark entry contains all information from one trace record needed
 /// in order to visualize the time-series of trace records. The part of the
@@ -53,11 +54,12 @@ impl Default for Entry {
 
 #[cfg(test)]
 mod test {
-    use super::Entry;
     use std::{
         mem::{align_of, size_of, MaybeUninit},
         ptr::addr_of,
     };
+
+    use super::Entry;
 
     #[test]
     fn bindgen_layout() {

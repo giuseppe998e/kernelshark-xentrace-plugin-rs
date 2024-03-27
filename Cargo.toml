@@ -1,13 +1,12 @@
 [package]
 name = "kernelshark-xentrace-plugin"
+version = "1.1.0"
 description = "KernelShark XenTrace plugin using Rust and FFI"
-version = "1.0.0"
 authors = ["Giuseppe Eletto <giuseppe.eletto98@gmail.com>"]
-readme = "README.md"
 license = "LGPL-2.1-or-later"
-keywords = ["xen", "xentrace", "kenelshark", "ks", "trace", "plugin", "ffi"]
+rust-version = "1.65"
 repository = "https://github.com/giuseppe998e/kernelshark-xentrace-plugin-rs/"
-rust-version = "1.56.1"
+keywords = ["xen", "xentrace", "trace", "analyzer", "kenelshark", "ks", "plugin", "ffi"]
 edition = "2021"
 publish = false
 
@@ -15,8 +14,10 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-libc = "^0.2"
-xentrace-parser = "^1.1"
+fxhash = "0.2"
+lazy_static = "1.4"
+libc = "0.2"
+xentrace-parser = "2.1"
 
 # These optimizations could save some disk space
 # With `cargo build --profile release-minify`
