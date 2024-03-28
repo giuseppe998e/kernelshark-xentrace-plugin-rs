@@ -11,55 +11,60 @@ use self::{hvm::get_hvm_name, hw::get_hw_name, sched::get_sched_name};
 use crate::ffi::xen::trace::*;
 
 const DOM0OP_NAMES: &[(u16, &str)] = &[
-    (0x001, "domain_create"),
-    (0x002, "domain_destroy"),
+    (0x001, "dom0:create"),
+    (0x002, "dom0:destroy"),
     // prevent fmt
 ];
 
 const GEN_NAMES: &[(u16, &str)] = &[
-    (0x001, "lost_records"),
-    (0x002, "wrap_buffer"),
-    (0x004, "trace_irq"),
+    (0x001, "gen:lost_records"),
+    (0x002, "gen:wrap_buffer"),
+    (0x003, "gen:cpu_change"),
 ];
 
 const MEM_NAMES: &[(u16, &str)] = &[
-    (0x001, "page_grant_map"),
-    (0x002, "page_grant_unmap"),
-    (0x003, "page_grant_transfer"),
+    (0x001, "mem:page_grant_map"),
+    (0x002, "mem:page_grant_unmap"),
+    (0x003, "mem:page_grant_transfer"),
+    (0x004, "mem:set_p2m_entry"),
+    (0x005, "mem:decrease_reservation"),
+    (0x010, "mem:pod_populate"),
+    (0x011, "mem:pod_zero_reclaim"),
+    (0x012, "mem:pod_superpage_splinter"),
 ];
 
 const PV_NAMES: &[(u16, &str)] = &[
-    (0x003, "trap"),
-    (0x004, "page_fault"),
-    (0x005, "forced_invalid_op"),
-    (0x006, "emulate_privop"),
-    (0x007, "emulate_4G"),
-    (0x008, "math_state_restore"),
-    (0x009, "paging_fixup"),
-    (0x00A, "gdt_ldt_mapping_fault"),
-    (0x00B, "ptwr_emulation"),
-    (0x00C, "ptwr_emulation_pae"),
-    (0x00D, "hypercall"),
-    (0x00E, "hypercall"),
-    (0x00F, "hypercall"),
+    (0x001, "pv:hypercall"),
+    (0x003, "pv:trap"),
+    (0x004, "pv:page_fault"),
+    (0x005, "pv:forced_invalid_op"),
+    (0x006, "pv:emulate_privop"),
+    (0x007, "pv:emulate_4gb"),
+    (0x008, "pv:math_state_restore"),
+    (0x009, "pv:paging_fixup"),
+    (0x00A, "pv:gdt_ldt_mapping_fault"),
+    (0x00B, "pv:ptwr_emulation"),
+    (0x00C, "pv:ptwr_emulation_pae"),
+    (0x00D, "pv:hypercall_v2"),
+    (0x00E, "pv:hypercall_subcall"),
 ];
 
 const SHADOW_NAMES: &[(u16, &str)] = &[
-    (0x001, "shadow_not_shadow"),
-    (0x002, "shadow_fast_propagate"),
-    (0x003, "shadow_fast_mmio"),
-    (0x004, "shadow_false_fast_path"),
-    (0x005, "shadow_mmio"),
-    (0x006, "shadow_fixup"),
-    (0x007, "shadow_domf_dying"),
-    (0x008, "shadow_emulate"),
-    (0x009, "shadow_emulate_unshadow_user"),
-    (0x00A, "shadow_emulate_unshadow_evtinj"),
-    (0x00B, "shadow_emulate_unshadow_unhandled"),
-    (0x00C, "shadow_emulate_wrmap_bf"),
-    (0x00D, "shadow_emulate_prealloc_unpin"),
-    (0x00E, "shadow_emulate_resync_full"),
-    (0x00F, "shadow_emulate_resync_only"),
+    (0x001, "shadow:not_shadow"),
+    (0x002, "shadow:fast_propagate"),
+    (0x003, "shadow:fast_mmio"),
+    (0x004, "shadow:false_fast_path"),
+    (0x005, "shadow:mmio"),
+    (0x006, "shadow:fixup"),
+    (0x007, "shadow:domf_dying"),
+    (0x008, "shadow:emulate"),
+    (0x009, "shadow:emulate_unshadow_user"),
+    (0x00A, "shadow:emulate_unshadow_evtinj"),
+    (0x00B, "shadow:emulate_unshadow_unhandled"),
+    (0x00C, "shadow:wrmap_bf"),
+    (0x00D, "shadow:prealloc_unpin"),
+    (0x00E, "shadow:resync_full"),
+    (0x00F, "shadow:resync_only"),
 ];
 
 lazy_static::lazy_static! {

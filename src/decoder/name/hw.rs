@@ -3,20 +3,20 @@ use std::collections::HashMap;
 use fxhash::FxBuildHasher;
 
 const HW_PM_NAMES: &[(u16, &str)] = &[
-    (0x001, "cpu_freq_change"),
-    (0x002, "cpu_idle_entry"),
-    (0x003, "cpu_idle_exit"),
+    (0x001, "hw/pm:freq_change"),
+    (0x002, "hw/pm:idle_entry"),
+    (0x003, "hw/pm:idle_exit"),
 ];
 
 const HW_IRQ_NAMES: &[(u16, &str)] = &[
-    (0x001, "cleanup_move_delayed"),
-    (0x002, "cleanup_move"),
-    (0x003, "bind_vector"),
-    (0x004, "clear_vector"),
-    (0x005, "move_vector"),
-    (0x006, "assign_vector"),
-    (0x007, "bogus_vector"),
-    (0x008, "do_irq"),
+    (0x001, "hw/irq:move_cleanup_delay"),
+    (0x002, "hw/irq:move_cleanup"),
+    (0x003, "hw/irq:bind_vector"),
+    (0x004, "hw/irq:clear_vector"),
+    (0x005, "hw/irq:move_finish"),
+    (0x006, "hw/irq:assign_vector"),
+    (0x007, "hw/irq:unmapped_vector"),
+    (0x008, "hw/irq:handled"),
 ];
 
 lazy_static::lazy_static! {

@@ -1,6 +1,6 @@
 [package]
 name = "kernelshark-xentrace-plugin"
-version = "1.1.1"
+version = "1.2.0"
 description = "KernelShark XenTrace plugin using Rust and FFI"
 authors = ["Giuseppe Eletto <giuseppe.eletto98@gmail.com>"]
 license = "LGPL-2.1-or-later"
