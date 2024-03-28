@@ -85,8 +85,9 @@ pub fn load_entries(
         let cpu_qhz = get_env_cpu_freq();
         let first_tsc = trace.first().map(|record| record.event().tsc());
 
-        let default_domid = u16::from(DomainKind::default()) as i32;
-        let _ = stream.add_task_id(default_domid);
+        let idle_domid = u16::from(DomainKind::Zero) as i32; // Switch PID with the Dom0
+        let host_domid = u16::from(DomainKind::Idle) as i32; // Switch PID with the Idle
+        let _ = stream.add_task_id(host_domid);
 
         trace
             .iter()
@@ -103,14 +104,12 @@ pub fn load_entries(
                     .unwrap_or(c_short::MAX);
 
                 entry.pid = match record.domain().kind() {
-                    DomainKind::Idle => 0,
-                    DomainKind::Default => default_domid,
-                    _ => {
-                        let task_id = (u32::from(record.domain()) + 1)
-                            .try_into()
-                            .unwrap_or(c_int::MAX);
-                        let _ = stream.add_task_id(task_id);
-                        task_id
+                    DomainKind::Idle => idle_domid,
+                    DomainKind::Zero => host_domid,
+                    domain => {
+                        let dom_id = u16::from(domain) as i32;
+                        let _ = stream.add_task_id(dom_id);
+                        dom_id
                     }
                 };
 
